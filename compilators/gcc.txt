@@ -1,0 +1,70 @@
+
+Les outils disponibles dans GCC sont les suivants :
+gcc             Compilateur GNU du langage C.
+g++             Compilateur GNU du langage C++.
+c++             Alias de g++.
+cpp             Preprocesseur C.
+cc1             Compilateur C.
+cc1plus         Compilateur C++.
+gasp            Preprocesseur pour l'assembleur.
+as              Assembleur.
+ar              Archiveur.
+ld              Editeur de liens.
+make            Programme de gestion des dependances pour la construction des projets.
+gdb             Debogueur symbolique.
+strip           Extracteur d'informations symboliques de deboguage.
+gperf           Profiler.
+gcov            Analyseur de taux de couverture.
+g77             Traducteur de Fortran 77 en C.
+dlltool         Outil de generation des tables d'exportation et des librairies d'importation des DLLs pour Windows.
+
+
+
+gcc (ou g++) disposent des options classiques de la plupart des compilateurs. Les principales options sont definies ci-dessous :
+—help            Affiche l'aide de GCC.
+—version         Donne la version de GCC.
+-E              Appelle le preprocesseur. N'effectue pas la compilation.
+-S              Appelle le preprocesseur et effectue la compilation. N'effectue pas l'assemblage ni l'edition de lien. Seuls les fichiers assembleur (« .S ») sont generes.
+-c              Appelle le preprocesseur, effectue la compilation et l'assemblage, mais ne fait pas l'edition de lien. Seuls les fichiers objets (« .o ») sont generes.
+-o nom          Impose le nom du fichier executable genere lors de la compilation d'un fichier source.
+-g              Genère les informations symboliques de deboguage.
+-fexceptions    Active la gestion des exceptions C++.
+-fpic           Genère du code relogeable. Cette option est necessaire pour la compilation des fichiers utilises dans une DLL ou un fichier chargeable dynamiquement.
+-On             Indique le niveau d'optimisation (n peut prendre les valeurs allant de 0 a 3, ou « s » pour optimiser la taille des binaires).
+-mcpu=cpu       Indique le type de processeur pour lequel le code doit être optimise. Le code fonctionnera sur tous les processeurs de la famille de ce processeur.
+-march=cpu      Indique le type de processeur pour lequel le code doit être genere. Le code genere sera specifique a ce processeur, et ne fonctionnera peut-être pas sur un autre modèle de la même famille. Cette option active automatiquement l'option -mcpu avec le même processeur.
+-pipe           Utilise les pipes systèmes au lieu des fichiers temporaires pour les communications entre le preprocesseur, le compilateur et l'assembleur.
+-w              Supprime tous les warnings.
+-W              Active les warnings supplementaires.
+-Wall           Active tous les warnings possibles.
+-mwindows       Cree un executable GUI Windows.
+-mdll           Cree une DLL Windows.
+-fvtable-thunks Utilise le mecanisme des tables de fonctions virtuelles. Cette option est necessaire pour utiliser les interfaces COM sous Windows.
+
+
+
+Il est egalement possible de passer des options specifiques aux programmes appeles par gcc (ou g++) a l'aide de l'option -W<lettre>. Les options les plus utiles sont les suivantes :
+  -Wa,<options>     Passe les options suivantes a l'assembleur. Les options doivent être separees par des virgules.
+  -Wp,<options>     Passe les options suivantes au preprocesseur. Les options doivent être separees par des virgules.
+  -Wl,<options>     Passe les options suivantes a l'editeur de liens. Les options doivent être separees par des virgules.
+
+
+Precompiled headers (*.gch)
+precompiled.h.gch: precompiled.h
+    gcc -Winvalid-pch -c precompiled.h -o precompiled.h.gch
+
+
+References :
+
+- manuel officiel
+http://www.gnu.org/software/make/manual/make.html
+
+- interessant
+http://pagesperso-orange.fr/emmanuel.remy/C++/Compilation/compilation.html
+http://www.cs.utah.edu/dept/old/texinfo/make/make.html
+
+- Preprocesseur
+http://amake.sourceforge.net/amake-preprocessor.html
+
+- Precompiled headers
+http://www.g-truc.net/article/precompiled.pdf
