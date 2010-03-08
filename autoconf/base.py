@@ -16,6 +16,7 @@ class BaseLibChecker(object):
     language     = 'c'
     dependencies = []
     checkDone    = False
+    libs = []
 
     def enabled(self,env,option=None):
         '''
