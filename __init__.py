@@ -86,6 +86,12 @@ class SConsProject:
             self.bits = 32
             
         self.sconf_files  = [os.path.join(self.dir_sconsProject,'hostconf.py'), os.path.join(self.dir,'hostconf.py'), os.path.join(self.dir,self.hostname+'.py')]
+        
+        # scons optimizations...
+        self.env.SourceCode('.', None)
+        self.env.Decider('MD5-timestamp')
+        SetOption('implicit_cache', 1)
+        SetOption('max_drift', 60*15) # cache the checksum after max_drift seconds
 
     
     #------------------------------------ Utils -----------------------------------#
