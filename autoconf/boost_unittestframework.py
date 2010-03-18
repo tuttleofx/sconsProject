@@ -1,10 +1,12 @@
 from base import *
+from boost import *
 
 class BoostUnittestframeworkChecker(BaseLibChecker):
 
     def __init__( self ):
         self.name  = 'boost_unittestframework'
-        self.language = 'c++'
+        self.language = 'c++',
+        self.dependencies=[boost]
         pass
 
     def initOptions(self, putois, opts):

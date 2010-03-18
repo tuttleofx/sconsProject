@@ -1,4 +1,6 @@
 from base import *
+from boost import *
 
-boost_thread = LibWithHeaderChecker('boost_thread', 'boost/thread.hpp', 'c++')
+boost_thread = LibWithHeaderChecker( 'boost_thread', 'boost/thread.hpp', 'c++',
+                                     dependencies=[boost] )
 
