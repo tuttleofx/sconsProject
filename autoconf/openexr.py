@@ -1,4 +1,4 @@
-from base import *
+from _external import *
 
 openexr = LibWithHeaderChecker(
             ['IlmImf', 'Half', 'IlmThread'], 'OpenEXR/ImfInputFile.h', 'c++',

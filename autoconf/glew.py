@@ -1,4 +1,4 @@
-from base import *
+from _external import *
 
 if windows:
     glew = LibWithHeaderChecker('glew32','GL/glew.h','c', name='glew')

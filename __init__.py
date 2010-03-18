@@ -5,13 +5,13 @@ from SCons.Script import *
 import sys
 from time import *
 import atexit
-import autoconf
-import compilators
 import os
 import socket
 import string
 import subprocess
 
+import autoconf
+import compilators
 from utils import *
 from utils.colors import *
 
@@ -136,6 +136,8 @@ class SConsProject:
 	def getRealAbsoluteCwd(self, relativePath=None):
 		'''Returns original current directory (not inside the VariantDir)...'''
 		dir = Dir('.').srcnode().abspath
+		if isinstance(relativePath, list):
+			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
 		if relativePath:
 			return os.path.join(dir, relativePath)
 		else:
@@ -515,7 +517,81 @@ class SConsProject:
 #        
 #        env.AddPostAction(obj , Chmod(str(obj),bin_mode) )
 
-	#------------------- Automatic file search ------------------------#
+#-------------------------------- Autoconf ------------------------------------#
+	def appendDict( self, dst, src ):
+		for k, v in src.items():
+			if k in dst:
+				if isinstance(dst[k], list):
+					dst[k] += v if isinstance(v, list) else [v]
+				else:
+					dst[k] = dst[k] + v if isinstance(v, list) else [v]
+			else:
+				dst[k] = v
+
+	def ObjectLibrary( self, name, libraries=[], includes=[], envFlags={} ):
+		'''To create an ObjectLibrary and expose it in the project to be simply used by other targets.'''
+		# expose this library
+		dstLibChecker = autoconf._internal.InternalLibChecker( name=name, includes=includes, envFlags=envFlags, dependencies=libraries )
+		setattr(self.libs, name, dstLibChecker)
+		return dstLibChecker
+
+	def StaticLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''To create a StaticLibrary and expose it in the project to be simply used by other targets.'''
+		sourcesFiles = sources
+		if dirs:
+			sourcesFiles += self.scanFiles( dirs, accept, reject )
+		localEnv = self.createEnv( libraries )
+		localEnv.Append( CPPPATH = dirs+includes )
+		if localEnvFlags:
+			localEnv.Append( **localEnvFlags )
+		if globalEnvFlags:
+			localEnv.Append( **globalEnvFlags )
+		dstLib = localEnv.StaticLibrary( target=lib, source=sourcesFiles )
+		localEnv.Install( self.inOutputLib(), dstLib )
+
+		# expose this library
+		envFlags=externEnvFlags
+		self.appendDict( envFlags, globalEnvFlags )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies )
+		setattr(self.libs, lib, dstLibChecker)
+		return dstLibChecker
+
+	def SharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''To create a SharedLibrary and expose it in the project to be simply used by other targets.'''
+		sourcesFiles = sources
+		if dirs:
+			sourcesFiles += self.scanFiles( dirs, accept, reject )
+		localEnv = self.createEnv( libraries )
+		localEnv.Append( CPPPATH = dirs+includes )
+		if localEnvFlags:
+			localEnv.Append( localEnvFlags )
+		if globalEnvFlags:
+			localEnv.Append( globalEnvFlags )
+		dstLib = localEnv.SharedLibrary( target=lib, source=sourcesFiles )
+		localEnv.Install( self.inOutputLib(), dstLib )
+
+		# expose this library
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=externEnvFlags+globalEnvFlags, dependencies=libraries+dependencies )
+		setattr(self.libs, lib, dstLibChecker)
+		return dstLibChecker
+
+	def StaticSharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+							 externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+							 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''To create a StaticLibrary compiled with position independant code (like in shared libraries), and expose it in the project to be simply used by other targets.'''
+		newLocalEnvFlags = localEnvFlags
+		newLocalEnvFlags['OBJSUFFIX'] = '.os'
+		self.appendDict( newLocalEnvFlags, { 'CCFLAGS': self.CC['sharedobject'] } )
+		return self.StaticLibrary( lib=lib, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags,
+								   externEnvFlags=externEnvFlags, globalEnvFlags=globalEnvFlags, dependencies=dependencies,
+								   accept=accept, reject=reject )
+
+
+#-------------------- Automatic file/directory search -------------------------#
 	def recursiveDirs(self, root):
 		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)])
 
@@ -547,7 +623,7 @@ class SConsProject:
 		lsources = map(toLocalDirs, sources)
 		return self.unique(lsources)
 
-	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp']):
+	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp']):
 		'''
 		Recursively search files in "dirs" that matches 'accepts' wildcards and don't contains "reject"
 		'''

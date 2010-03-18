@@ -1,4 +1,4 @@
-from base import *
+from _external import *
 from boost import *
 
 boost_serialization = LibWithHeaderChecker( ['boost_serialization', 'boost_wserialization'],

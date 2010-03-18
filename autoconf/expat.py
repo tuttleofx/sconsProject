@@ -1,3 +1,3 @@
-from base import *
+from _external import *
 
 expat = LibWithHeaderChecker('expat', ['expat.h'], 'c')

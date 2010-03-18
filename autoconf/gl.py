@@ -1,4 +1,4 @@
-from base import *
+from _external import *
 
 if windows:
     gl = LibWithHeaderChecker('opengl32', ['windows.h','GL/gl.h'], 'c')

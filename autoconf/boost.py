@@ -1,4 +1,4 @@
-from base import *
+from _external import *
 
 class BoostChecker(HeaderChecker):
     '''
