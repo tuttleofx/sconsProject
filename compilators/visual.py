@@ -1,4 +1,11 @@
 
+name = 'visualc'
+ccBin = 'cl'
+cxxBin = 'cl'
+linkBin = 'link'
+linkxxBin = 'link'
+
+
 CC = {}
 CC['define']   = '/D'
 CC['exceptionsEnabled'] = '/EHsc' #'/GX'
@@ -39,4 +46,9 @@ CC['release']   = ['/DRELEASE'] + CC['optimize']
 # base : a toujours mettre
 CC['base']      = [CC['exceptionsEnabled']]
 CC['linkbase']  = []
+
+
+def version( bin = 'cl' ):
+	import subprocess
+	return subprocess.Popen( [bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
 

@@ -1,5 +1,14 @@
 
+name = 'gcc'
+ccBin = 'gcc'
+cxxBin = 'g++'
+linkBin = ccBin
+linkxxBin = cxxBin
+
+
 CC = {}
+CC['version']   = '-dumpversion'
+
 CC['define']   = '-D'
 
 
@@ -29,8 +38,10 @@ CC['warning3']  = ['-Wall','-Wno-return-type','-Winline']
 CC['warning4']  = CC['warning3']
 CC['nowarning'] = ['/w']
 
+
+CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
 CC['visibilityhidden'] = ['-fvisibility=hidden']
-CC['sharedobject'] = ['-fpic']+CC['visibilityhidden']
+CC['sharedobject'] = ['-fPIC']
 
 CC['profile']   = ['-pg']
 CC['linkprofile']   = ['-pg']
@@ -62,4 +73,9 @@ CC['release']   = ['-DRELEASE'] + CC['optimize']
 # base : a toujours mettre
 CC['base']      = []
 CC['linkbase']  = []
+
+
+def version( bin = 'gcc' ):
+	import subprocess
+	return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
 

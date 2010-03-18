@@ -21,8 +21,8 @@ dlltool         Outil de generation des tables d'exportation et des librairies d
 
 
 gcc (ou g++) disposent des options classiques de la plupart des compilateurs. Les principales options sont definies ci-dessous :
-—help            Affiche l'aide de GCC.
-—version         Donne la version de GCC.
+--help          Affiche l'aide de GCC.
+--version       Donne la version de GCC.
 -E              Appelle le preprocesseur. N'effectue pas la compilation.
 -S              Appelle le preprocesseur et effectue la compilation. N'effectue pas l'assemblage ni l'edition de lien. Seuls les fichiers assembleur (« .S ») sont generes.
 -c              Appelle le preprocesseur, effectue la compilation et l'assemblage, mais ne fait pas l'edition de lien. Seuls les fichiers objets (« .o ») sont generes.
@@ -68,3 +68,27 @@ http://amake.sourceforge.net/amake-preprocessor.html
 
 - Precompiled headers
 http://www.g-truc.net/article/precompiled.pdf
+
+
+
+--allow-shlib-undefined
+--no-allow-shlib-undefined
+   Allows  (the  default)  or  disallows  undefined  symbols  in  shared
+   libraries (It is meant, in shared libraries _linked_against_, not the
+   one we're creating!--Pavel Shved). This switch is similar to --no-un-
+   defined except  that it determines  the  behaviour when the undefined
+   symbols are in a shared library rather than a regular object file. It
+   does not  affect  how  undefined  symbols in regular object files are
+   handled.
+
+   The  reason  that  --allow-shlib-undefined is the default is that the
+   shared library being specified at link time may not be  the  same  as
+   the one that is available at load time, so the symbols might actually
+   be resolvable at load time.  Plus there are some systems,  (eg  BeOS)
+   where  undefined  symbols in shared libraries is normal.  (The kernel
+   patches them at load time to select which function is most  appropri-
+   ate for the current architecture.  This is used for example to dynam-
+   ically select an appropriate memset function).  Apparently it is also
+   normal for HPPA shared libraries to have undefined symbols.
+
+
