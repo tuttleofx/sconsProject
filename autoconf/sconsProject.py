@@ -16,46 +16,46 @@ class SConsProjectChecker(BaseLibChecker):
     def configure(self, putois, env):
         if not self.enabled(env):
             return True
-        env.Append( LIBPATH = [ putois.inOutputLib() ] )
+        env.AppendUnique( LIBPATH = [ putois.inOutputLib() ] )
         
-        env.Append( CPPSUFFIXES = [ '.tcc' ] )
+        env.AppendUnique( CPPSUFFIXES = [ '.tcc' ] )
         # CPPSUFFIXES: The list of suffixes of files that will be scanned for C preprocessor implicit dependencies (#include lines).
         # The default list is [".c", ".C", ".cxx", ".cpp", ".c++", ".cc", ".h", ".H", ".hxx", ".hpp", ".hh", ".F", ".fpp", ".FPP", ".m", ".mm", ".S", ".spp", ".SPP"]
 
-        env.Append( CCFLAGS = putois.CC['base'] )
-        env.Append( LINKFLAGS = putois.CC['linkbase'] )
+        env.AppendUnique( CCFLAGS = putois.CC['base'] )
+        env.AppendUnique( LINKFLAGS = putois.CC['linkbase'] )
         
         if env['WINDOWS']:
-            env.Append( CCFLAGS = putois.CC['define']+'WIN' )
-            env.Append( CCFLAGS = putois.CC['define']+'WINDOWS' )
-            env.Append( CCFLAGS = putois.CC['define']+'_WINDOWS' )
-            env.Append( CCFLAGS = putois.CC['define']+'__WINDOWS__' )
-            env.Append( CCFLAGS = putois.CC['define']+'WIN'+str(env['OSBITS']) )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'WIN' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'WINDOWS' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'_WINDOWS' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'__WINDOWS__' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'WIN'+str(env['OSBITS']) )
         else:
-            env.Append( CCFLAGS = putois.CC['define']+'UNIX' )
-            env.Append( CCFLAGS = putois.CC['define']+'__UNIX__' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'UNIX' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'__UNIX__' )
         
-        env.Append( CCFLAGS = putois.CC['warning4'] )
+        env.AppendUnique( CCFLAGS = putois.CC['warning4'] )
 
         if env['mode'] == 'debug' :
-            env.Append( CCFLAGS = putois.CC['debug'] )
-            env.Append( CCFLAGS = putois.CC['define']+'DEBUG' )
+            env.AppendUnique( CCFLAGS = putois.CC['debug'] )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'DEBUG' )
         else :
-            env.Append( CCFLAGS = putois.CC['release'] )
-            env.Append( CCFLAGS = putois.CC['define']+'NDEBUG' )
-            env.Append( CCFLAGS = putois.CC['define']+'RELEASE' )
+            env.AppendUnique( CCFLAGS = putois.CC['release'] )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'NDEBUG' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'RELEASE' )
 
         if env['mode'] == 'prod' :
-            env.Append( CCFLAGS = putois.CC['define']+'PROD' )
-            env.Append( CCFLAGS = putois.CC['define']+'PRODUCTION' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'PROD' )
+            env.AppendUnique( CCFLAGS = putois.CC['define']+'PRODUCTION' )
 
         if env['profile'] :
-            env.Append( CCFLAGS = putois.CC['profile'] )
-            env.Append( LINKFLAGS = putois.CC['linkprofile'] )
+            env.AppendUnique( CCFLAGS = putois.CC['profile'] )
+            env.AppendUnique( LINKFLAGS = putois.CC['linkprofile'] )
             
         if env['cover'] :
-            env.Append( CCFLAGS = putois.CC['cover'] )
-            env.Append( LINKFLAGS = putois.CC['linkcover'] )
+            env.AppendUnique( CCFLAGS = putois.CC['cover'] )
+            env.AppendUnique( LINKFLAGS = putois.CC['linkcover'] )
         
         return True
 

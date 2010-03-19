@@ -421,6 +421,15 @@ class SConsProject:
 		self.env.Alias('doxygen', doxygen)
 		self.env.Clean(doxygen, ['doc/html'])
 
+		def printInstalledFiles(target, source, env):
+			# Whatever it takes to build
+			for t in FindInstalledFiles():
+				print '*', t.name, ':'
+				print ' '*5, t.abspath
+			return None
+
+		printInstalledFilesCmd = self.env.Command('always', '', printInstalledFiles)
+		self.env.Alias('targets', printInstalledFilesCmd)
 
 		if self.libs_error:
 			sys.stdout.write(self.env['color_error'])
@@ -480,34 +489,52 @@ class SConsProject:
 		for lib in self.commonLibs:
 			libs.insert(0, lib) # prepend (self.libs.sconsProject)
 		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
+
+		def uniqLibs(al):
+			d = {}
+			for s in al:
+				d[s.name] = s
+			return d.values()
+
+		def recursiveFindLibs(lib):
+			if not lib:
+				return []
+			ll = []
+			ll.append( lib )
+			for l in lib.dependencies:
+				ll.extend( recursiveFindLibs(l) )
+			return ll
+		
+		allLibs = []
 		for eachlib in libs:
-			for lib in eachlib.dependencies + [eachlib]:
-				self.defineHiddenOptions(opts_current)
-				if not lib.initOptions(self, opts_current):
-					if lib not in self.libs_error:
-						self.libs_error.append(lib)
-				if lib not in self.libs_help:
-					lib.initOptions(self, self.opts_help)
-					self.libs_help.append(lib)
+			allLibs.extend( recursiveFindLibs(eachlib) )
+		allLibs = uniqLibs(allLibs)
+		
+		for lib in allLibs:
+			self.defineHiddenOptions(opts_current)
+			if not lib.initOptions(self, opts_current):
+				if lib not in self.libs_error:
+					self.libs_error.append(lib)
+			if lib not in self.libs_help:
+				lib.initOptions(self, self.opts_help)
+				self.libs_help.append(lib)
 		opts_current.Update(env_current)
 		self.applyOptionsOnEnv(env_current)
 
 		if self.needConfigure():
 			conf = env_current.Configure()
-			for eachlib in libs:
-				for lib in eachlib.dependencies + [eachlib]:
-					if not lib.configure(self, env_current):
-						if lib not in self.libs_error:
-							self.libs_error.append(lib)
-					#elif self.env['check_libs']:
-					elif not lib.check(conf):
-						if lib not in self.libs_error:
-							self.libs_error.append(lib)
+			for lib in allLibs:
+				if not lib.configure(self, env_current):
+					if lib not in self.libs_error:
+						self.libs_error.append(lib)
+				#elif self.env['check_libs']:
+				elif not lib.check(conf):
+					if lib not in self.libs_error:
+						self.libs_error.append(lib)
 			env_current = conf.Finish()
 
-		for eachlib in libs:
-			for lib in eachlib.dependencies + [eachlib]:
-				lib.postconfigure(self, env_current)
+		for lib in allLibs:
+			lib.postconfigure(self, env_current)
 
 		sys.stdout.write(self.env['color_clear'])
 		return env_current
@@ -535,19 +562,22 @@ class SConsProject:
 		setattr(self.libs, name, dstLibChecker)
 		return dstLibChecker
 
-	def StaticLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+	def StaticLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a StaticLibrary and expose it in the project to be simply used by other targets.'''
-		sourcesFiles = sources
+		sourcesFiles = []
+		sourcesFiles += sources
 		if dirs:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
 		localEnv = self.createEnv( libraries )
-		localEnv.Append( CPPPATH = dirs+includes )
+		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
 		if localEnvFlags:
-			localEnv.Append( **localEnvFlags )
+			localEnv.AppendUnique( **localEnvFlags )
+		if replaceLocalEnvFlags:
+			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
-			localEnv.Append( **globalEnvFlags )
+			localEnv.AppendUnique( **globalEnvFlags )
 		dstLib = localEnv.StaticLibrary( target=lib, source=sourcesFiles )
 		localEnv.Install( self.inOutputLib(), dstLib )
 
@@ -558,35 +588,43 @@ class SConsProject:
 		setattr(self.libs, lib, dstLibChecker)
 		return dstLibChecker
 
-	def SharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+	def SharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a SharedLibrary and expose it in the project to be simply used by other targets.'''
-		sourcesFiles = sources
+		sourcesFiles = []
+		sourcesFiles += sources
 		if dirs:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
 		localEnv = self.createEnv( libraries )
-		localEnv.Append( CPPPATH = dirs+includes )
+		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
 		if localEnvFlags:
-			localEnv.Append( localEnvFlags )
+			localEnv.AppendUnique( **localEnvFlags )
+		if replaceLocalEnvFlags:
+			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
-			localEnv.Append( globalEnvFlags )
+			localEnv.AppendUnique( **globalEnvFlags )
 		dstLib = localEnv.SharedLibrary( target=lib, source=sourcesFiles )
 		localEnv.Install( self.inOutputLib(), dstLib )
 
 		# expose this library
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=externEnvFlags+globalEnvFlags, dependencies=libraries+dependencies )
+		envFlags=externEnvFlags
+		self.appendDict( envFlags, globalEnvFlags )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies )
 		setattr(self.libs, lib, dstLibChecker)
 		return dstLibChecker
 
-	def StaticSharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={},
+	def StaticSharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 							 externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 							 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a StaticLibrary compiled with position independant code (like in shared libraries), and expose it in the project to be simply used by other targets.'''
-		newLocalEnvFlags = localEnvFlags
-		newLocalEnvFlags['OBJSUFFIX'] = '.os'
+		newLocalEnvFlags = {}
+		newLocalEnvFlags.update( localEnvFlags )
 		self.appendDict( newLocalEnvFlags, { 'CCFLAGS': self.CC['sharedobject'] } )
-		return self.StaticLibrary( lib=lib, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags,
+		newReplaceLocalEnvFlags = {}
+		newReplaceLocalEnvFlags.update( replaceLocalEnvFlags )
+		newReplaceLocalEnvFlags['OBJSUFFIX'] = '.os'
+		return self.StaticLibrary( lib=lib, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags, replaceLocalEnvFlags=newReplaceLocalEnvFlags,
 								   externEnvFlags=externEnvFlags, globalEnvFlags=globalEnvFlags, dependencies=dependencies,
 								   accept=accept, reject=reject )
 
@@ -610,9 +648,7 @@ class SConsProject:
 		'''
 		sources = []
 		realcwd = self.getRealAbsoluteCwd()
-		# on passe en absolu pour parcourir les fichiers
-		absdir = realcwd + os.sep + directory
-		paths = self.recursiveDirs(absdir)
+		paths = self.recursiveDirs( self.getRealAbsoluteCwd(directory) )
 		for path in paths:
 			for pattern in accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings

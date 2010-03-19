@@ -23,7 +23,7 @@ class LibWithHeaderChecker(BaseLibChecker):
 	def check(self, conf):
 		if not self.enabled(conf.env):
 			return True
-		conf.env.Append( CPPDEFINES = self.defines )
+		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLibWithHeader( conf, self.libname, self.header, self.language, call=self.call )
 		self.checkDone = True
 		#print 'checkDone LibWithHeaderChecker: ', result
@@ -50,7 +50,7 @@ class LibChecker(BaseLibChecker):
 	def check(self, conf):
 		if not self.enabled(conf.env):
 			return True
-		conf.env.Append( CPPDEFINES = self.defines )
+		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLib( conf, self.libname )
 		self.checkDone = True
 		#print 'checkDone LibChecker: ', result
@@ -77,13 +77,13 @@ class HeaderChecker(BaseLibChecker):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''
-		env.Append( LIBS = self.libs )
+		env.AppendUnique( LIBS = self.libs )
 		return True
 
 	def check(self, conf):
 		if not self.enabled(conf.env):
 			return True
-		conf.env.Append( CPPDEFINES = self.defines )
+		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		self.checkDone = True
 		#print 'checkDone HeaderChecker: ', result

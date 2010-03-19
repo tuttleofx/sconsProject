@@ -135,9 +135,9 @@ def generate(env):
         env.PrependENVPath('PATH', cudaToolkitPath + '/bin')
 
         # add required libraries
-        env.Append(CPPPATH=[cudaSDKPath + '/common/inc', cudaToolkitPath + '/include'])
-        env.Append(LIBPATH=[cudaSDKPath + '/lib', cudaSDKPath + '/common/lib' + cudaSDKSubLibDir, cudaToolkitPath + '/lib'])
-        env.Append(LIBS=['cudart'])
+        env.AppendUnique(CPPPATH=[cudaSDKPath + '/common/inc', cudaToolkitPath + '/include'])
+        env.AppendUnique(LIBPATH=[cudaSDKPath + '/lib', cudaSDKPath + '/common/lib' + cudaSDKSubLibDir, cudaToolkitPath + '/lib'])
+        env.AppendUnique(LIBS=['cudart'])
 
 def exists(env):
         return env.Detect('nvcc') 

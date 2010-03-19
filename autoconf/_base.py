@@ -75,22 +75,22 @@ class BaseLibChecker(object):
 		#assert istype( header,  list )
 		if conf.env['check_libs'] and not self.checkDone:
 			if isinstance(libname, list) and len(libname) > 1:
-				conf.env.Append( LIBS = libname[1:] )
+				conf.env.AppendUnique( LIBS = libname[1:] )
 				libname = libname[0]
 			return conf.CheckLibWithHeader( libname, header, language=language, call=call )
 		else:
-			conf.env.Append( LIBS = libname )
+			conf.env.AppendUnique( LIBS = libname )
 			#print 'no CheckLibWithHeader', self.name
 			return True
 
 	def CheckLib( self, conf, libname ):
 		if conf.env['check_libs'] and not self.checkDone:
 			if isinstance(libname, list) and len(libname) > 1:
-				conf.env.Append( LIBS = libname[:-1] )
+				conf.env.AppendUnique( LIBS = libname[:-1] )
 				libname = libname[0]
 			return conf.CheckLib( libname )
 		else:
-			conf.env.Append( LIBS = libname )
+			conf.env.AppendUnique( LIBS = libname )
 			#print 'no CheckLib', self.name
 			return True
 

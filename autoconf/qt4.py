@@ -62,7 +62,7 @@ class Qt4Checker(LibWithHeaderChecker):
         if len(self.uiFiles):
             uis = [env.Uic4( ui ) for ui in self.uiFiles]
             if self.useLocalIncludes:
-                env.Append( CPPPATH=subdirs(self.uiFiles) )
+                env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
         return True
 
 qt4 = Qt4Checker

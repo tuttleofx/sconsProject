@@ -32,14 +32,14 @@ class InternalLibChecker(BaseLibChecker):
 			env.AppendUnique( CPPPATH = self.includes )
 		
 		if self.envFlags:
-			env.Append( **(self.envFlags) )
+			env.AppendUnique( **(self.envFlags) )
 
-		#env.AppendUnique( LIBPATH= ) # use project LIBPATH
+		# we don't set LIBPATH because it's setted by the project
 
 		return True
 
 	def postconfigure(self, putois, env):
 		'''Don't check for local lib, so we only add it.'''
 		if self.lib:
-			env.Append( LIBS = self.lib )
+			env.AppendUnique( LIBS = self.lib )
 
