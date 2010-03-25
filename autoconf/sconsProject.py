@@ -35,7 +35,7 @@ class SConsProjectChecker(BaseLibChecker):
             env.AppendUnique( CCFLAGS = putois.CC['define']+'UNIX' )
             env.AppendUnique( CCFLAGS = putois.CC['define']+'__UNIX__' )
         
-        env.AppendUnique( CCFLAGS = putois.CC['warning4'] )
+        env.AppendUnique( CCFLAGS = putois.CC['warning2'] )
 
         if env['mode'] == 'debug' :
             env.AppendUnique( CCFLAGS = putois.CC['debug'] )
