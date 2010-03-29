@@ -490,19 +490,22 @@ class SConsProject:
 			libs.insert(0, lib) # prepend (self.libs.sconsProject)
 		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
 
-		def uniqLibs(al):
-			d = {}
-			for s in al:
-				d[s.name] = s
-			return d.values()
+		def uniqLibs(allLibs):
+			libs = []
+			names = []
+			for s in allLibs:
+				if s.name not in names:
+					names.append( s.name )
+					libs.append( s )
+			return libs
 
 		def recursiveFindLibs(lib):
 			if not lib:
 				return []
 			ll = []
-			ll.append( lib )
 			for l in lib.dependencies:
 				ll.extend( recursiveFindLibs(l) )
+			ll.append( lib )
 			return ll
 		
 		allLibs = []
