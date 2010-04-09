@@ -260,7 +260,7 @@ class SConsProject:
 			return '%s%s%s\n\t%s\n\t( default=%s, actual=%s)\n\n' % (self.env['color_title'], opt, self.env['color_clear'], help, default, actual)
 		opts.FormatVariableHelpText = help_format
 
-		opts.Add(EnumVariable('mode', 'Compilation mode', 'debug', allowed_values=('debug', 'release', 'dist')))
+		opts.Add(EnumVariable('mode', 'Compilation mode', 'debug', allowed_values=('debug', 'release', 'production')))
 		opts.Add(BoolVariable('install', 'Install', False))
 		opts.Add(BoolVariable('profile', 'Build with profiling support', False))
 		opts.Add(BoolVariable('cover', 'Build with cover support', False))

@@ -65,10 +65,8 @@ CC['linkcover'] = ['-lgcov']
 #        A list of all arcs in the program flow graph. This allows gcov to reconstruct the program flow graph, so that it can compute all basic block and arc execution counts from the information in the sourcename.da file (this last file is the output from `-fprofile-arcs'). 
 
 
-
-#CC['debug']   = ['-g3','-ggdb3','-gstabs3']
 CC['debug']   = ['-g3','-ggdb3','-gstabs3'] + CC['nooptimize']
-CC['release']   = ['-DRELEASE'] + CC['optimize'] 
+CC['release']   = CC['optimize']
 
 # base : a toujours mettre
 CC['base']      = []
