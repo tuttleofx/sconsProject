@@ -400,9 +400,6 @@ class SConsProject:
 
 		if self.env['clean']:
 			Execute(Delete(self.dir_output_build))
-			Execute(Delete(self.dir_output_bin))
-			Execute(Delete(self.dir_output_lib))
-			Execute(Delete(self.dir_output_test))
 			Exit(1)
 
 		self.printInfos()
