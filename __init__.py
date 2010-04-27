@@ -247,8 +247,12 @@ class SConsProject:
 
 		self.opts.Update(self.env)
 
-		self.env['CCVERSION'] = self.compilator.version(self.env['CC'])
-		self.env['CXXVERSION'] = self.compilator.version(self.env['CXX'])
+		if 'icecc' in self.env['CC']:
+			self.env['CCVERSION'] = self.compilator.version(self.env['ICECC_CC'])
+			self.env['CXXVERSION'] = self.compilator.version(self.env['ICECC_CXX'])
+		else:
+			self.env['CCVERSION'] = self.compilator.version(self.env['CC'])
+			self.env['CXXVERSION'] = self.compilator.version(self.env['CXX'])
 
 	def createOptions(self, filename, args):
 		'''
@@ -278,20 +282,21 @@ class SConsProject:
 		opts.Add(PathVariable('ENVPATH', 'Additional bin path (at compilation)', '', PathVariable.PathAccept))
 		opts.Add(PathVariable('ENVLIBPATH', 'Additional librairie path (at compilation)', '', PathVariable.PathAccept))
 
-		opts.Add('CCPATH', 'Additional preprocessor paths', [])
 		opts.Add('CPPPATH', 'Additional preprocessor paths', [])
+		opts.Add('CPPDEFINES', 'Additional preprocessor defines', [])
 		opts.Add('LIBPATH', 'Additional library paths', [])
-		opts.Add('CCFLAGS', 'Additional C++ flags', [])
-		opts.Add('CPPFLAGS', 'Additional C++ flags', [])
-		opts.Add('CCDEFINES', 'Additional constants', [])
-		opts.Add('CPPDEFINES', 'Additional constants', [])
 		opts.Add('LIBS', 'Additional libraries', [])
 		# Don't explicitly put include directory arguments in CCFLAGS or CXXFLAGS
 		# because the result will be non-portable and the directories will not
 		# be searched by the dependency scanner.
-		opts.Add('CCFLAGS', 'Additional C flags', [])
-		opts.Add('CPPFLAGS', 'Additional C flags', [])
+		opts.Add('CCFLAGS', 'Additional C and C++ flags', [])
+		opts.Add('CFLAGS', 'Additional C flags', [])
+		opts.Add('CXXFLAGS', 'Additional C++ flags', [])
 		opts.Add('LINKFLAGS', 'Additional linker flags', [])
+
+		opts.Add('ICECC_CC', 'Compilator', self.compilator.ccBin)
+		opts.Add('ICECC_CXX', 'Compilator', self.compilator.cxxBin)
+		opts.Add('ICECC_VERSION', 'Compilator', '')
 
 		opts.Add(PathVariable('EXTLIBRARIES', 'Directory of external libraries', '.', PathVariable.PathAccept))
 		opts.Add(PathVariable('BUILDDIR', 'Top directory of compilation tree', self.dir, PathVariable.PathIsDirCreate))
@@ -400,9 +405,6 @@ class SConsProject:
 
 		if self.env['clean']:
 			Execute(Delete(self.dir_output_build))
-			Execute(Delete(self.dir_output_bin))
-			Execute(Delete(self.dir_output_lib))
-			Execute(Delete(self.dir_output_test))
 			Exit(1)
 
 		self.printInfos()
