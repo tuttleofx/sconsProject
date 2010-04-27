@@ -636,7 +636,7 @@ class SConsProject:
 
 #-------------------- Automatic file/directory search -------------------------#
 	def recursiveDirs(self, root):
-		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)])
+		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
 
 #    def unique( self, sourcesList ) :
 #        # element order not preserved
