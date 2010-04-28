@@ -75,5 +75,8 @@ CC['linkbase']  = []
 
 def version( bin = 'gcc' ):
 	import subprocess
-	return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+	try:
+		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+	except:
+		return 'unknown'
 
