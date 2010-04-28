@@ -354,8 +354,9 @@ class SConsProject:
 
 	def applyOptionsOnProject(self):
 
-		if self.env['install']:
-			self.env['mode'] = 'dist'
+		# force production mode on installation...
+		#if self.env['install']:
+		#	self.env['mode'] = 'production'
 		subpath = os.path.join(self.hostname, '-'.join([self.compilator.name, self.env['CCVERSION']]), self.env['mode'])
 		self.dir_output_build  = os.path.join(self.env['BUILDDIR'], self.dir_build_name, subpath)
 		install_dir = os.path.join(self.env['DISTDIR'], self.dir_output_name, subpath)
@@ -635,10 +636,6 @@ class SConsProject:
 #-------------------- Automatic file/directory search -------------------------#
 	def recursiveDirs(self, root):
 		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
-
-#    def unique( self, sourcesList ) :
-#        # element order not preserved
-#        return dict.fromkeys(sourcesList).keys()
 
 	def unique(self, sourcesList):
 		# element order preserved
