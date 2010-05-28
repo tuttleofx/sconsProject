@@ -32,7 +32,8 @@ class BaseLibChecker(object):
 		'''
 		Init options for enable/disable or configure the library.
 		'''
-		raise NotImplementedError
+		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'enabled compilation with '+self.name, True  ) )
+		#raise NotImplementedError
 
 	def configure(self, putois, env):
 		'''
@@ -43,6 +44,7 @@ class BaseLibChecker(object):
 			return True
 		#env.ParseConfig('pkg-config --cflags --libs ' + self.libname)
 
+		env.AppendUnique( CPPDEFINES='with_'+self.name )
 		if self.enabled(env,'incdir_'+self.name):
 			#if self.language == 'c++':
 			env.AppendUnique( CPPPATH=env['incdir_'+self.name] )

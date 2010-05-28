@@ -88,6 +88,9 @@ class SConsProject:
 
 		self.sconf_files  = [os.path.join(self.dir_sconsProject, 'hostconf.py'), os.path.join(self.dir, 'hostconf.py'), os.path.join(self.dir, self.hostname + '.py')]
 
+		if self.osname == "nt":
+			self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
+
 		# scons optimizations...
 		self.env.SourceCode('.', None)
 		self.env.Decider('MD5-timestamp')
@@ -506,14 +509,15 @@ class SConsProject:
 			if not lib:
 				return []
 			ll = []
+			ll.append( lib )
 			for l in lib.dependencies:
 				ll.extend( recursiveFindLibs(l) )
-			ll.append( lib )
 			return ll
 		
 		allLibs = []
 		for eachlib in libs:
-			allLibs.extend( recursiveFindLibs(eachlib) )
+			libdeps = recursiveFindLibs(eachlib)
+			allLibs.extend( libdeps )
 		allLibs = uniqLibs(allLibs)
 		
 		for lib in allLibs:

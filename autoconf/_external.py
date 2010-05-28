@@ -15,7 +15,7 @@ class LibWithHeaderChecker(BaseLibChecker):
 		self.defines = defines
 
 	def initOptions(self, putois, opts):
-		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'enabled compilation with '+self.name, True  ) )
+		BaseLibChecker.initOptions(self, putois, opts)
 		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name,  None )
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name,     None )
 		return True
@@ -42,7 +42,7 @@ class LibChecker(BaseLibChecker):
 		self.defines = defines
 
 	def initOptions(self, putois, opts):
-		opts.Add( Variables.BoolVariable( 'with_'+self.name, 'enabled compilation with '+self.name, True  ) )
+		BaseLibChecker.initOptions(self, putois, opts)
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
 		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
 		return True
@@ -68,7 +68,7 @@ class HeaderChecker(BaseLibChecker):
 		self.libs = libs
 
 	def initOptions(self, putois, opts):
-		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'enable compilation with '+self.name, True ) )
+		BaseLibChecker.initOptions(self, putois, opts)
 		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
 		return True

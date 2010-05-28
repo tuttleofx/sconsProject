@@ -206,12 +206,14 @@ def _detect(env):
 		#SCons.Warnings.warn(
 		#	QtdirNotFound,
 		#	"QTDIR variable is not defined, using moc executable as a hint (QTDIR=%s)" % QTDIR)
+		print "QTDIR variable is not defined, using moc executable as a hint (QTDIR=%s)" % QTDIR
 		return QTDIR
 
-	raise SCons.Errors.StopError(
-		QtdirNotFound,
-		"Could not detect Qt 4 installation")
-	return None
+	#raise SCons.Errors.StopError(
+	#	QtdirNotFound,
+	#	"Could not detect Qt 4 installation")
+	print "Could not detect Qt 4 installation"
+	return ""
 
 def generate(env):
 	"""Add Builders and construction variables for qt to an Environment."""
@@ -235,7 +237,9 @@ def generate(env):
 		fullpath = env.Detect([command+'-qt4', command+'4', command])
 		if not (fullpath is None) : return fullpath
 
-		raise Exception("Qt4 command '" + command + "' not found. Tried: " + ', '.join(triedPaths))
+		#raise Exception("Qt4 command '" + command + "' not found. Tried: " + ', '.join(triedPaths))
+		print "Qt4 command '" + command + "' not found. Tried: " + ', '.join(triedPaths)
+		return ""
 		
 
 	CLVar = SCons.Util.CLVar

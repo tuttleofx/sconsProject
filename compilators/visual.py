@@ -28,9 +28,9 @@ CC['warning3']  = '/W3'
 CC['warning4']  = '/W4'
 CC['nowarning'] = ['/w', '/W0']
 
-
-CC['sharedobject'] = ''
-
+CC['sharedNoUndefined'] = ['']
+CC['visibilityhidden'] = ['']
+CC['sharedobject'] = ['']
 
 CC['profile']   = ['/PROFILE']
 CC['linkprofile'] = []
@@ -50,5 +50,7 @@ CC['linkbase']  = []
 
 def version( bin = 'cl' ):
 	import subprocess
-	return subprocess.Popen( [bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
-
+	try:
+		return 'unknown' #subprocess.Popen( [bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
+	except:
+		return 'unknown'
