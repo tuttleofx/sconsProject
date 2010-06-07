@@ -253,9 +253,12 @@ class SConsProject:
 		if 'icecc' in self.env['CC']:
 			self.env['CCVERSION'] = self.compilator.version(self.env['ICECC_CC'])
 			self.env['CXXVERSION'] = self.compilator.version(self.env['ICECC_CXX'])
+			self.env['ENV']['ICECC_CC'] = self.env['ICECC_CC']
+			self.env['ENV']['ICECC_CXX'] = self.env['ICECC_CXX']
 		else:
 			self.env['CCVERSION'] = self.compilator.version(self.env['CC'])
 			self.env['CXXVERSION'] = self.compilator.version(self.env['CXX'])
+
 
 	def createOptions(self, filename, args):
 		'''
@@ -275,6 +278,7 @@ class SConsProject:
 		opts.Add(BoolVariable('ignore_errors', 'Ignore any configuration errors', False))
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
 		opts.Add(BoolVariable('ccache', 'Enable compilator cache system (ccache style)', True))
+		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True))
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
@@ -381,7 +385,10 @@ class SConsProject:
 		SConsignFile(os.path.join(self.dir_output_build, 'sconsign.dblite'))
 
 		if self.env['ccache']:
-			CacheDir(self.dir_output_build + os.sep + 'ccache')
+			if os.path.isabs(self.env['ccachedir']):
+				CacheDir(self.env['ccachedir'])
+			else:
+				CacheDir(os.path.join(self.dir_output_build, self.env['ccachedir']))
 
 		try:
 			SetOption('num_jobs', int(self.env['jobs']))
