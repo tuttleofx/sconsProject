@@ -516,9 +516,9 @@ class SConsProject:
 			if not lib:
 				return []
 			ll = []
-			ll.append( lib )
 			for l in lib.dependencies:
 				ll.extend( recursiveFindLibs(l) )
+			ll.append( lib )
 			return ll
 		
 		allLibs = []
