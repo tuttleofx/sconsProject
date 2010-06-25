@@ -26,26 +26,25 @@ class SConsProjectChecker(BaseLibChecker):
         env.AppendUnique( LINKFLAGS = putois.CC['linkbase'] )
         
         if env['WINDOWS']:
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'WIN' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'WINDOWS' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'_WINDOWS' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'__WINDOWS__' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'WIN'+str(env['OSBITS']) )
+            env.AppendUnique( CPPDEFINES = 'WIN' )
+            env.AppendUnique( CPPDEFINES = 'WINDOWS' )
+            env.AppendUnique( CPPDEFINES = '_WINDOWS' )
+            env.AppendUnique( CPPDEFINES = '__WINDOWS__' )
+            env.AppendUnique( CPPDEFINES = 'WIN'+str(env['OSBITS']) )
         else:
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'UNIX' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'__UNIX__' )
+            env.AppendUnique( CPPDEFINES = 'UNIX' )
+            env.AppendUnique( CPPDEFINES = '__UNIX__' )
 
         if env['mode'] == 'debug' :
             env.AppendUnique( CCFLAGS = putois.CC['debug'] )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'DEBUG' )
+            env.AppendUnique( CPPDEFINES = 'DEBUG' )
         else :
             env.AppendUnique( CCFLAGS = putois.CC['release'] )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'NDEBUG' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'RELEASE' )
+            env.AppendUnique( CPPDEFINES = 'NDEBUG' )
+            env.AppendUnique( CPPDEFINES = 'RELEASE' )
 
         if env['mode'] == 'production' :
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'PROD' )
-            env.AppendUnique( CCFLAGS = putois.CC['define']+'PRODUCTION' )
+            env.AppendUnique( CPPDEFINES = 'PRODUCTION' )
 
         if env['profile'] :
             env.AppendUnique( CCFLAGS = putois.CC['profile'] )

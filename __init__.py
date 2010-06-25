@@ -259,7 +259,6 @@ class SConsProject:
 			self.env['CCVERSION'] = self.compilator.version(self.env['CC'])
 			self.env['CXXVERSION'] = self.compilator.version(self.env['CXX'])
 
-
 	def createOptions(self, filename, args):
 		'''
 		Define basics options.
@@ -335,6 +334,7 @@ class SConsProject:
 		opts.Add('LINKCOMSTR', 'display option', '$LINKCOM')
 		opts.Add('ARCOMSTR', 'display option', '$ARCOM')
 		opts.Add('INSTALLSTR', 'display option', 'Install file: $SOURCE as $TARGET')
+		opts.Add('SWIG', 'swig binary', '$SWIG')
 		opts.Add('SWIGCOMSTR', 'display option', '$SWIGCOM')
 		opts.Add('QT_MOCFROMCXXCOMSTR', 'display option', '$QT_MOCFROMCXXCOM')
 		opts.Add('QT_MOCFROMHCOMSTR', 'display option', '$QT_MOCFROMHCOM')
@@ -516,9 +516,9 @@ class SConsProject:
 			if not lib:
 				return []
 			ll = []
+			ll.append( lib )
 			for l in lib.dependencies:
 				ll.extend( recursiveFindLibs(l) )
-			ll.append( lib )
 			return ll
 		
 		allLibs = []

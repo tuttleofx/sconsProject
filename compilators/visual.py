@@ -38,10 +38,10 @@ CC['cover']     = []
 CC['linkcover'] = []
 
 
-CC['debug']   = ['/DDEBUG','/DEBUG','/Zi'] + CC['nooptimize']
+CC['debug']   = ['/DEBUG','/Zi'] + CC['nooptimize']
 # /Zi            Generates complete debugging information
 # desapprouvee : '/Yd'
-CC['release']   = ['/DRELEASE'] + CC['optimize']
+CC['release']   = CC['optimize']
 
 # base : a toujours mettre
 CC['base']      = [CC['exceptionsEnabled']]

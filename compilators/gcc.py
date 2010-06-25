@@ -66,7 +66,7 @@ CC['linkcover'] = ['-lgcov']
 
 
 CC['debug']   = ['-g3','-ggdb3','-gstabs3'] + CC['nooptimize']
-CC['release']   = ['-DRELEASE'] + CC['optimize'] 
+CC['release']   = CC['optimize'] 
 
 # base : a toujours mettre
 CC['base']      = []
