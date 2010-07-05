@@ -334,7 +334,7 @@ class SConsProject:
 		opts.Add('LINKCOMSTR', 'display option', '$LINKCOM')
 		opts.Add('ARCOMSTR', 'display option', '$ARCOM')
 		opts.Add('INSTALLSTR', 'display option', 'Install file: $SOURCE as $TARGET')
-		opts.Add('SWIG', 'swig binary', '$SWIG')
+		opts.Add('SWIG', 'swig binary', 'swig')
 		opts.Add('SWIGCOMSTR', 'display option', '$SWIGCOM')
 		opts.Add('QT_MOCFROMCXXCOMSTR', 'display option', '$QT_MOCFROMCXXCOM')
 		opts.Add('QT_MOCFROMHCOMSTR', 'display option', '$QT_MOCFROMHCOM')
@@ -526,6 +526,10 @@ class SConsProject:
 			libdeps = recursiveFindLibs(eachlib)
 			allLibs.extend( libdeps )
 		allLibs = uniqLibs(allLibs)
+
+		#print '-'*10
+		#print 'libs:', [a.name for a in libs]
+		#print 'allLibs:', [a.name for a in allLibs]
 		
 		for lib in allLibs:
 			self.defineHiddenOptions(opts_current)
