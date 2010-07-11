@@ -116,7 +116,9 @@ class SConsProject:
 		print ':: hostname           = ' + self.hostname
 		print ':: compilator c       = ' + self.env['CC'] + (' (' + self.env['CCVERSION'] + ')' if 'CCVERSION' in self.env and self.env['CCVERSION'] else '')
 		print ':: compilator c++     = ' + self.env['CXX'] + (' (' + self.env['CXXVERSION'] + ')' if 'CXXVERSION' in self.env and self.env['CXXVERSION'] else '')
-		print(':: parallel jobs      = %d' % (GetOption('num_jobs')))
+		print ':: parallel jobs      = %d' % (GetOption('num_jobs'))
+		if self.env['ccache']:
+			print ':: ccachedir          = ' + self.env['ccachedir']
 		print(':' * 80)
 		sys.stdout.write(self.env['color_clear'])
 
@@ -276,7 +278,7 @@ class SConsProject:
 		opts.Add(BoolVariable('clean', 'Remove all the build directory', False))
 		opts.Add(BoolVariable('ignore_errors', 'Ignore any configuration errors', False))
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
-		opts.Add(BoolVariable('ccache', 'Enable compilator cache system (ccache style)', True))
+		opts.Add(BoolVariable('ccache', 'Enable compilator cache system (ccache style)', False))
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True))
 		opts.Add('jobs', 'Parallel jobs', '1')
