@@ -9,14 +9,14 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
         self.dependencies=[boost]
         pass
 
-    def initOptions(self, putois, opts):
+    def initOptions(self, project, opts):
         opts.Add( Variables.BoolVariable( 'with_'+self.name, 'enabled compilation with '+self.name, True  ) )
         return True
 
-    def configure(self, putois, env):
+    def configure(self, project, env):
         if not self.enabled(env):
             return True
-        env.Append( CCFLAGS = putois.CC['define']+'BOOST_TEST_DYN_LINK' )
+        env.Append( CCFLAGS = project.CC['define']+'BOOST_TEST_DYN_LINK' )
         return True
 
     def check(self, conf):

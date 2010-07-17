@@ -55,7 +55,7 @@ class Qt4Checker(LibWithHeaderChecker):
             result &= r
         return result
     
-    def postconfigure(self, putois, env):
+    def postconfigure(self, project, env):
         '''
         Cas particulier. Permet d'ajouter des elements a l'environnement apres les checks de toutes les libs.
         '''

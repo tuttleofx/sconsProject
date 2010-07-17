@@ -20,11 +20,11 @@ class InternalLibChecker(BaseLibChecker):
 		'''Can't disable an internal library.'''
 		return True
 
-	def initOptions(self, putois, opts):
+	def initOptions(self, project, opts):
 		'''No options for internal library.'''
 		return True
 	
-	def configure(self, putois, env):
+	def configure(self, project, env):
 		'''
 		Add things to the environment.
 		'''
@@ -38,7 +38,7 @@ class InternalLibChecker(BaseLibChecker):
 
 		return True
 
-	def postconfigure(self, putois, env):
+	def postconfigure(self, project, env):
 		'''Don't check for local lib, so we only add it.'''
 		if self.lib:
 			env.AppendUnique( LIBS = self.lib )

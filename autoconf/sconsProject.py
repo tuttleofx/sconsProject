@@ -9,21 +9,21 @@ class SConsProjectChecker(BaseLibChecker):
         self.name  = 'SConsProject'
         pass
 
-    def initOptions(self, putois, opts):
+    def initOptions(self, project, opts):
         opts.Add( Variables.BoolVariable( 'with_'+self.name, 'enabled compilation with '+self.name, True  ) )
         return True
 
-    def configure(self, putois, env):
+    def configure(self, project, env):
         if not self.enabled(env):
             return True
-        env.AppendUnique( LIBPATH = [ putois.inOutputLib() ] )
+        env.AppendUnique( LIBPATH = [ project.inOutputLib() ] )
         
         env.AppendUnique( CPPSUFFIXES = [ '.tcc' ] )
         # CPPSUFFIXES: The list of suffixes of files that will be scanned for C preprocessor implicit dependencies (#include lines).
         # The default list is [".c", ".C", ".cxx", ".cpp", ".c++", ".cc", ".h", ".H", ".hxx", ".hpp", ".hh", ".F", ".fpp", ".FPP", ".m", ".mm", ".S", ".spp", ".SPP"]
 
-        env.AppendUnique( CCFLAGS = putois.CC['base'] )
-        env.AppendUnique( LINKFLAGS = putois.CC['linkbase'] )
+        env.AppendUnique( CCFLAGS = project.CC['base'] )
+        env.AppendUnique( LINKFLAGS = project.CC['linkbase'] )
         
         if env['WINDOWS']:
             env.AppendUnique( CPPDEFINES = 'WIN' )
@@ -36,10 +36,10 @@ class SConsProjectChecker(BaseLibChecker):
             env.AppendUnique( CPPDEFINES = '__UNIX__' )
 
         if env['mode'] == 'debug' :
-            env.AppendUnique( CCFLAGS = putois.CC['debug'] )
+            env.AppendUnique( CCFLAGS = project.CC['debug'] )
             env.AppendUnique( CPPDEFINES = 'DEBUG' )
         else :
-            env.AppendUnique( CCFLAGS = putois.CC['release'] )
+            env.AppendUnique( CCFLAGS = project.CC['release'] )
             env.AppendUnique( CPPDEFINES = 'NDEBUG' )
             env.AppendUnique( CPPDEFINES = 'RELEASE' )
 
@@ -47,12 +47,12 @@ class SConsProjectChecker(BaseLibChecker):
             env.AppendUnique( CPPDEFINES = 'PRODUCTION' )
 
         if env['profile'] :
-            env.AppendUnique( CCFLAGS = putois.CC['profile'] )
-            env.AppendUnique( LINKFLAGS = putois.CC['linkprofile'] )
+            env.AppendUnique( CCFLAGS = project.CC['profile'] )
+            env.AppendUnique( LINKFLAGS = project.CC['linkprofile'] )
             
         if env['cover'] :
-            env.AppendUnique( CCFLAGS = putois.CC['cover'] )
-            env.AppendUnique( LINKFLAGS = putois.CC['linkcover'] )
+            env.AppendUnique( CCFLAGS = project.CC['cover'] )
+            env.AppendUnique( LINKFLAGS = project.CC['linkcover'] )
         
         return True
 

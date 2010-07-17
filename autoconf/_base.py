@@ -28,18 +28,18 @@ class BaseLibChecker(object):
 			return env['with_'+self.name]
 		return False
 
-	def initOptions(self, putois, opts):
+	def initOptions(self, project, opts):
 		'''
 		Init options for enable/disable or configure the library.
 		'''
-		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'enabled compilation with '+self.name, True  ) )
+		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'Enable compilation with '+self.name, True  ) )
 		#raise NotImplementedError
 
-	def configure(self, putois, env):
+	def configure(self, project, env):
 		'''
 		Add things to the environment.
 		'''
-		# putois.printEnv( env, keys=[ 'with_'+self.name, 'incdir_'+self.name, 'libdir_'+self.name, ] )
+		# project.printEnv( env, keys=[ 'with_'+self.name, 'incdir_'+self.name, 'libdir_'+self.name, ] )
 		if not self.enabled(env):
 			return True
 		#env.ParseConfig('pkg-config --cflags --libs ' + self.libname)
@@ -56,7 +56,7 @@ class BaseLibChecker(object):
 
 		return True
 
-	def postconfigure(self, putois, env):
+	def postconfigure(self, project, env):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''

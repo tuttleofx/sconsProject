@@ -268,7 +268,9 @@ class SConsProject:
 		opts = Variables(filename, args)
 
 		def help_format(env, opt, help, default, actual, aliases):
-			return '%s%s%s\n\t%s\n\t( default=%s, actual=%s)\n\n' % (self.env['color_title'], opt, self.env['color_clear'], help, default, actual)
+			alignment = ' '*(len(opt)+2)
+			multilineHelp = help.replace('\n', '\n'+alignment)
+			return '%s%s%s  %s\n%s(default=%s, actual=%s)\n\n' % (self.env['color_title'], opt, self.env['color_clear'], multilineHelp, alignment, default, actual)
 		opts.FormatVariableHelpText = help_format
 
 		opts.Add(EnumVariable('mode', 'Compilation mode', 'debug', allowed_values=('debug', 'release', 'production')))
@@ -367,10 +369,8 @@ class SConsProject:
 
 
 	def applyOptionsOnProject(self):
-
-		# force production mode on installation...
-		#if self.env['install']:
-		#	self.env['mode'] = 'production'
+		'''
+		'''
 		subpath = os.path.join(self.hostname, '-'.join([self.compilator.name, self.env['CCVERSION']]), self.env['mode'])
 		self.dir_output_build  = os.path.join(self.env['BUILDDIR'], self.dir_build_name, subpath)
 		install_dir = os.path.join(self.env['DISTDIR'], self.dir_output_name, subpath)
@@ -542,7 +542,7 @@ class SConsProject:
 				lib.initOptions(self, self.opts_help)
 				self.libs_help.append(lib)
 		opts_current.Update(env_current)
-		self.applyOptionsOnEnv(env_current)
+		self.applyOptionsOnEnv(env_current) # needed ? we copy the project environment so it already have this properties, isn't it ?
 
 		if self.needConfigure():
 			conf = env_current.Configure()

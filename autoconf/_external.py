@@ -14,8 +14,8 @@ class LibWithHeaderChecker(BaseLibChecker):
 		self.dependencies = dependencies
 		self.defines = defines
 
-	def initOptions(self, putois, opts):
-		BaseLibChecker.initOptions(self, putois, opts)
+	def initOptions(self, project, opts):
+		BaseLibChecker.initOptions(self, project, opts)
 		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name,  None )
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name,     None )
 		return True
@@ -41,8 +41,8 @@ class LibChecker(BaseLibChecker):
 		self.dependencies = dependencies
 		self.defines = defines
 
-	def initOptions(self, putois, opts):
-		BaseLibChecker.initOptions(self, putois, opts)
+	def initOptions(self, project, opts):
+		BaseLibChecker.initOptions(self, project, opts)
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
 		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
 		return True
@@ -67,13 +67,13 @@ class HeaderChecker(BaseLibChecker):
 		self.defines = defines
 		self.libs = libs
 
-	def initOptions(self, putois, opts):
-		BaseLibChecker.initOptions(self, putois, opts)
+	def initOptions(self, project, opts):
+		BaseLibChecker.initOptions(self, project, opts)
 		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
 		return True
 
-	def postconfigure(self, putois, env):
+	def postconfigure(self, project, env):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''
