@@ -11,10 +11,11 @@ from gomp import *
 from pthread import *
 from ltdl import *
 
+# imagemagick C API
 imagemagick = LibWithHeaderChecker(
-        ['Magick++', 'MagickWand', 'MagickCore'],
-        ['Magick++.h'],
-        'c++',
+        ['MagickCore'],
+        ['magick/MagickCore.h'],
+        'c',
         name='imagemagick',
         dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl]
         )
