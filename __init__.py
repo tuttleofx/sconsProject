@@ -193,33 +193,34 @@ class SConsProject:
 			return basedir
 		return [basedir + d for d in dirs]
 
+	def inOutputDir(self, * dirs):
+		if not dirs:
+			return self.dir_output
+		return [ os.path.join( self.inOutputDir(), d ) for d in dirs ]
+
 	def inOutputLib(self, * dirs):
 		'''Returns "dirs" as subdirectories of "outputLib".'''
-		basedir = self.dir_output_lib + os.sep
 		if not dirs:
-			return basedir
-		return [basedir + d for d in dirs]
+			return self.dir_output_lib
+		return [ os.path.join( self.inOutputLib(), d ) for d in dirs ]
 
 	def inOutputHeaders(self, * dirs):
 		'''Returns "dirs" as subdirectories of "outputHeaders".'''
-		basedir = self.dir_output_header + os.sep
 		if not dirs:
-			return basedir
-		return [basedir + d for d in dirs]
+			return self.dir_output_header
+		return [ os.path.join( self.inOutputHeaders(), d ) for d in dirs ]
 
 	def inOutputBin(self, * dirs):
 		'''Returns "dirs" as subdirectories of "outputBin".'''
-		basedir = self.dir_output_bin + os.sep
 		if not dirs:
-			return basedir
-		return [basedir + d for d in dirs]
+			return self.dir_output_bin
+		return [ os.path.join( self.inOutputBin(), d ) for d in dirs ]
 
 	def inOutputTest(self, * dirs):
 		'''Returns "dirs" as subdirectories of "outputTest".'''
-		basedir = self.dir_output_test + os.sep
 		if not dirs:
-			return basedir
-		return [basedir + d for d in dirs]
+			return self.dir_output_test
+		return [ os.path.join( self.inOutputTest(), d ) for d in dirs ]
 
 	def getName(self):
 		'''Returns the current directory, often used as name.'''
@@ -376,6 +377,7 @@ class SConsProject:
 		install_dir = os.path.join(self.env['DISTDIR'], self.dir_output_name, subpath)
 		if self.env['install']:
 			install_dir = self.env['INSTALLDIR']
+		self.dir_output        = install_dir
 		self.dir_output_bin    = os.path.join(install_dir, 'bin')
 		self.dir_output_lib    = os.path.join(install_dir, 'lib')
 		self.dir_output_header = os.path.join(install_dir, 'include')
