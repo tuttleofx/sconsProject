@@ -58,6 +58,7 @@ class SConsProject:
 	dir_build_name    = '.dist'                   # base dir name for all intermediate compilation objects
 	dir_output_name   = 'dist'                    # base dir name for output build
 	dir_output_build  = 'undefined'               #
+	dir_output        = 'undefined'               #
 	dir_output_bin    = 'undefined'               # name generated depending on compilation type,
 	dir_output_lib    = 'undefined'               # we need to know if we are in debug mode, etc.
 	dir_output_header = 'undefined'               # (options needs to be initilized)
