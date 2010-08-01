@@ -17,6 +17,8 @@ class BaseLibChecker(object):
 	dependencies = []
 	checkDone    = False
 	libs = []
+	sconsNode = None # specific to internal libraries, None by default
+
 
 	def enabled(self,env,option=None):
 		'''

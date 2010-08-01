@@ -502,10 +502,27 @@ class SConsProject:
 		@todo : add opts=[] ?
 		'''
 		sys.stdout.write(self.env['color_autoconf']) # print without new line
-		env_current = self.env.Clone()
-
+		new_env = self.env.Clone()
+		new_libs = list(libs)
 		for lib in self.commonLibs:
-			libs.insert(0, lib) # prepend (self.libs.sconsProject)
+			new_libs.insert(0, lib) # prepend (self.libs.sconsProject)
+
+		return self.appendLibsToEnv( new_env, new_libs )
+
+	def appendLibsToEnv(self, env, libs=[]):
+		'''
+		Append libraries to an environment.
+		'''
+		if not libs:
+			return env
+
+		sys.stdout.write(self.env['color_autoconf']) # print without new line
+
+		if 'SconsProjectLibraries' in env:
+			env['SconsProjectLibraries'] += libs
+		else:
+			env['SconsProjectLibraries'] = libs
+
 		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
 
 		def uniqLibs(allLibs):
@@ -544,26 +561,26 @@ class SConsProject:
 			if lib not in self.libs_help:
 				lib.initOptions(self, self.opts_help)
 				self.libs_help.append(lib)
-		opts_current.Update(env_current)
-		self.applyOptionsOnEnv(env_current) # needed ? we copy the project environment so it already have this properties, isn't it ?
+		opts_current.Update(env)
+		self.applyOptionsOnEnv(env) # needed ? we copy the project environment so it already have this properties, isn't it ?
 
 		if self.needConfigure():
-			conf = env_current.Configure()
+			conf = env.Configure()
 			for lib in allLibs:
-				if not lib.configure(self, env_current):
+				if not lib.configure(self, env):
 					if lib not in self.libs_error:
 						self.libs_error.append(lib)
 				#elif self.env['check_libs']:
 				elif not lib.check(conf):
 					if lib not in self.libs_error:
 						self.libs_error.append(lib)
-			env_current = conf.Finish()
+			env = conf.Finish()
 
 		for lib in allLibs:
-			lib.postconfigure(self, env_current)
+			lib.postconfigure(self, env)
 
 		sys.stdout.write(self.env['color_clear'])
-		return env_current
+		return env
 
 # todo
 #    def Install(self):
@@ -582,21 +599,39 @@ class SConsProject:
 				dst[k] = v
 
 	def ObjectLibrary( self, name, libraries=[], includes=[], envFlags={} ):
-		'''To create an ObjectLibrary and expose it in the project to be simply used by other targets.'''
+		'''
+		To create an ObjectLibrary and expose it in the project to be easily used by other targets.
+		This is not a library just a configuration object with CPPDEFINES, CCFLAGS, LIBS, etc.
+		'''
 		# expose this library
 		dstLibChecker = autoconf._internal.InternalLibChecker( name=name, includes=includes, envFlags=envFlags, dependencies=libraries )
+
+		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, name, dstLibChecker)
+
 		return dstLibChecker
 
-	def StaticLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
-	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+	def StaticLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a StaticLibrary and expose it in the project to be simply used by other targets.'''
 		sourcesFiles = []
 		sourcesFiles += sources
 		if dirs:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
-		localEnv = self.createEnv( libraries )
+
+		if not sourcesFiles:
+			raise LogicError( "No source files for the target: " + target )
+
+		localEnv = None
+		if env:
+			localEnv = env
+			self.appendLibsToEnv(localEnv, libraries)
+		else:
+			# if no environment we create a new one
+			localEnv = self.createEnv( libraries )
+
+		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -604,25 +639,52 @@ class SConsProject:
 			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
 			localEnv.AppendUnique( **globalEnvFlags )
-		dstLib = localEnv.StaticLibrary( target=lib, source=sourcesFiles )
-		localEnv.Install( self.inOutputLib(), dstLib )
+
+		# create the target
+		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
+
+		# explicitly create dependencies to all internal libraries used
+		# i.e. internal libraries need to be compiled before this target
+		internalLibsDepends = [ l.sconsNode for l in libraries if l.sconsNode ] # if there is a sconsNode inside the library it's an internal lib
+		if internalLibsDepends:
+			localEnv.Depends( dstLib, internalLibsDepends )
+		
+		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
 
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies )
-		setattr(self.libs, lib, dstLibChecker)
-		return dstLibChecker
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies, sconsNode=dstLibInstall )
 
-	def SharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
-	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+		# add the new declared library to the list of libs checker in self.libs
+		setattr(self.libs, target, dstLibChecker)
+
+		return dstLibInstall
+
+	def SharedLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a SharedLibrary and expose it in the project to be simply used by other targets.'''
 		sourcesFiles = []
 		sourcesFiles += sources
 		if dirs:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
-		localEnv = self.createEnv( libraries )
+
+		if not sourcesFiles:
+			raise LogicError( "No source files for the target: " + target )
+		
+		localEnv = None
+		localLibraries = libraries
+		if env:
+			localEnv = env
+			self.appendLibsToEnv(localEnv, localLibraries)
+			if 'SconsProjectLibraries' in localEnv:
+				localLibraries += localEnv['SconsProjectLibraries']
+		else:
+			# if no environment we create a new one
+			localEnv = self.createEnv( localLibraries )
+
+		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -630,18 +692,30 @@ class SConsProject:
 			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
 			localEnv.AppendUnique( **globalEnvFlags )
-		dstLib = localEnv.SharedLibrary( target=lib, source=sourcesFiles )
-		localEnv.Install( self.inOutputLib(), dstLib )
+
+		# create the target
+		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
+
+		# explicitly create dependencies to all internal libraries used
+		# i.e. internal libraries need to be compiled before this target
+		internalLibsDepends = [ l.sconsNode for l in localLibraries if l.sconsNode ] # if there is a sconsNode inside the library it's an internal lib
+		if internalLibsDepends:
+			localEnv.Depends( dstLib, internalLibsDepends )
+
+		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
 
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=lib, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies )
-		setattr(self.libs, lib, dstLibChecker)
-		return dstLibChecker
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=localLibraries+dependencies, sconsNode=dstLibInstall )
 
-	def StaticSharedLibrary( self, lib, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
-							 externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+		# add the new declared library to the list of libs checker in self.libs
+		setattr(self.libs, target, dstLibChecker)
+
+		return dstLibInstall
+
+	def StaticSharedLibrary( self, target, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+							 externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 							 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''To create a StaticLibrary compiled with position independant code (like in shared libraries), and expose it in the project to be simply used by other targets.'''
 		newLocalEnvFlags = {}
@@ -650,8 +724,8 @@ class SConsProject:
 		newReplaceLocalEnvFlags = {}
 		newReplaceLocalEnvFlags.update( replaceLocalEnvFlags )
 		newReplaceLocalEnvFlags['OBJSUFFIX'] = '.os'
-		return self.StaticLibrary( lib=lib, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags, replaceLocalEnvFlags=newReplaceLocalEnvFlags,
-								   externEnvFlags=externEnvFlags, globalEnvFlags=globalEnvFlags, dependencies=dependencies,
+		return self.StaticLibrary( target=target, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags, replaceLocalEnvFlags=newReplaceLocalEnvFlags,
+								   externEnvFlags=externEnvFlags, globalEnvFlags=globalEnvFlags, dependencies=dependencies, installDir=installDir, install=install,
 								   accept=accept, reject=reject )
 
 
