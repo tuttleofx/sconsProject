@@ -23,9 +23,7 @@ class LibWithHeaderChecker(BaseLibChecker):
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name,     None )
 		return True
 
-	def check(self, conf):
-		if not self.enabled(conf.env):
-			return True
+	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLibWithHeader( conf, self.libname, self.header, self.language, call=self.call )
 		self.checkDone = True
@@ -53,9 +51,7 @@ class LibChecker(BaseLibChecker):
 		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
 		return True
 
-	def check(self, conf):
-		if not self.enabled(conf.env):
-			return True
+	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLib( conf, self.libname )
 		self.checkDone = True
@@ -86,9 +82,7 @@ class HeaderChecker(BaseLibChecker):
 		env.AppendUnique( LIBS = self.libs )
 		return True
 
-	def check(self, conf):
-		if not self.enabled(conf.env):
-			return True
+	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		self.checkDone = True
@@ -121,9 +115,7 @@ class FrameworkChecker(BaseLibChecker):
 		opts.Add( 'fwdir_'+self.name, 'Framework directory for '+self.name,     None )
 		return True
 
-	def check(self, conf):
-		if not self.enabled(conf.env):
-			return True
+	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckFrameworkWithHeader( conf, self.frameworks, self.header, self.language, call=self.call )
 		self.checkDone = True

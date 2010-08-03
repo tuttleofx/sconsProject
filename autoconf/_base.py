@@ -47,8 +47,6 @@ class BaseLibChecker(object):
 		Add things to the environment.
 		'''
 		# project.printEnv( env, keys=[ 'with_'+self.name, 'incdir_'+self.name, 'libdir_'+self.name, ] )
-		if not self.enabled(env):
-			return True
 		#env.ParseConfig('pkg-config --cflags --libs ' + self.libname)
 
 		env.AppendUnique( CPPDEFINES='with_'+self.name )
@@ -73,13 +71,11 @@ class BaseLibChecker(object):
 		'''
 		return True
 
-	def check(self, conf):
+	def check(self, project, conf):
 		'''
 		This function needs to be reimplemented in sub-classes to check the current library.
 		Return True if the library was found, False otherwise.
 		'''
-		if not self.enabled(conf.env):
-			return True
 		self.checkDone = True
 		return True
 

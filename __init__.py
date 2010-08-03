@@ -496,7 +496,7 @@ class SConsProject:
 
 #-------------------------------- Autoconf ------------------------------------#
 
-	def createEnv(self, libs=[]):
+	def createEnv(self, libs=[], name=''):
 		'''
 		Create an environment from the common one and apply libraries configuration to this environment.
 		@todo : add opts=[] ?
@@ -507,9 +507,9 @@ class SConsProject:
 		for lib in self.commonLibs:
 			new_libs.insert(0, lib) # prepend (self.libs.sconsProject)
 
-		return self.appendLibsToEnv( new_env, new_libs )
+		return self.appendLibsToEnv( new_env, new_libs, name )
 
-	def appendLibsToEnv(self, env, libs=[]):
+	def appendLibsToEnv(self, env, libs=[], name=''):
 		'''
 		Append libraries to an environment.
 		'''
@@ -567,13 +567,16 @@ class SConsProject:
 		if self.needConfigure():
 			conf = env.Configure()
 			for lib in allLibs:
-				if not lib.configure(self, env):
-					if lib not in self.libs_error:
-						self.libs_error.append(lib)
-				#elif self.env['check_libs']:
-				elif not lib.check(conf):
-					if lib not in self.libs_error:
-						self.libs_error.append(lib)
+				if not lib.enabled(env):
+					print( 'Target "', name, '" compiled without ', lib.name, '.' )
+				else:
+					if not lib.configure(self, env):
+						if lib not in self.libs_error:
+							self.libs_error.append(lib)
+					#elif self.env['check_libs']:
+					elif not lib.check(self, conf):
+						if lib not in self.libs_error:
+							self.libs_error.append(lib)
 			env = conf.Finish()
 
 		for lib in allLibs:
@@ -636,7 +639,7 @@ class SConsProject:
 			self.appendLibsToEnv(localEnv, libraries)
 		else:
 			# if no environment we create a new one
-			localEnv = self.createEnv( libraries )
+			localEnv = self.createEnv( libraries, name=target )
 
 		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
@@ -695,7 +698,7 @@ class SConsProject:
 				localLibraries += localEnv['SconsProjectLibraries']
 		else:
 			# if no environment we create a new one
-			localEnv = self.createEnv( localLibraries )
+			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )

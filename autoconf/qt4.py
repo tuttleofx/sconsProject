@@ -43,9 +43,7 @@ class Qt4Checker(LibWithHeaderChecker):
     def declareUiFiles(self, uiFiles):
         self.uiFiles = uiFiles
         
-    def check(self, conf):
-        if not self.enabled(conf.env):
-            return True
+    def check(self, project, conf):
         conf.env.EnableQt4Modules( self.modules, debug=False )
         result = True
         for mod in self.modules:

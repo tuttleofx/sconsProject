@@ -5,8 +5,8 @@ class BoostChecker(HeaderChecker):
     TODO
     '''
 
-    def __init__( self ):
-        self.name  = 'boost'
+    def __init__( self, version ):
+        HeaderChecker.__init__( 'boost', ['boost/static_assert.hpp'], 'c++' )
 
     def checkVersion(self,context,version):
         # Boost versions are in format major.minor.subminor
@@ -32,10 +32,9 @@ class BoostChecker(HeaderChecker):
         context.Result(ret)
         return ret
 
-    def check(self, conf):
-        if not self.enabled(conf.env):
-            return True
-        return True # self.checkVersion()
+    def check(self, project, conf):
+        # self.checkVersion()
+        return True
 
 #boost = BoostChecker()
 boost = HeaderChecker( 'boost',['boost/static_assert.hpp'], 'c++' )
