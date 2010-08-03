@@ -1,9 +1,13 @@
 from SCons import Variables
 from SCons import Environment
 
+from operator import add
+
 import os
 import sys
 windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
+macos = sys.platform.lower().startswith("darwin")
+linux = not windows and not macos
 unix = not windows
 
 class BaseLibChecker(object):
@@ -17,6 +21,7 @@ class BaseLibChecker(object):
 	dependencies = []
 	checkDone    = False
 	libs = []
+	frameworks = [] # only for macos
 	sconsNode = None # specific to internal libraries, None by default
 
 
@@ -56,6 +61,10 @@ class BaseLibChecker(object):
 		if self.enabled(env,'libdir_'+self.name):
 			env.AppendUnique( LIBPATH=env['libdir_'+self.name] )
 
+		if macos:
+			if self.enabled(env,'fwdir_'+self.name):
+				env.AppendUnique( LINKFLAGS=reduce(add, [ ['-F',f] for f in env['fwdir_'+self.name]], []) )
+
 		return True
 
 	def postconfigure(self, project, env):
@@ -74,9 +83,23 @@ class BaseLibChecker(object):
 		self.checkDone = True
 		return True
 
+	def CheckFrameworkWithHeader( self, conf, framework, header, language, call=False ):
+		#import inspect
+		#print inspect.stack()
+		#
+		#if conf.env['check_libs'] and not self.checkDone:
+		#	if isinstance(framework, list) and len(framework) > 1:
+		#		conf.env.AppendUnique( LIBS = framework[:-1] )
+		#		framework = framework[-1]
+		#	return conf.CheckLibWithHeader( framework, header, language=language, call=call )
+		#else:
+		if not isinstance(framework, list):
+			framework = [framework]
+		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
+		#print 'no CheckLibWithHeader', self.name
+		return True
+
 	def CheckLibWithHeader( self, conf, libname, header, language, call=False ):
-		#assert istype( libname, list )
-		#assert istype( header,  list )
 		if conf.env['check_libs'] and not self.checkDone:
 			if isinstance(libname, list) and len(libname) > 1:
 				conf.env.AppendUnique( LIBS = libname[:-1] )

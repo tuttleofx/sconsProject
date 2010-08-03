@@ -1,3 +1,10 @@
+import os
+import sys
+windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
+macos = sys.platform.lower().startswith("darwin")
+linux = not windows and not macos
+unix = not windows
+
 
 name = 'gcc'
 ccBin = 'gcc'
@@ -39,8 +46,13 @@ CC['warning4']  = CC['warning3']
 CC['nowarning'] = ['/w']
 
 
-CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
-CC['visibilityhidden'] = ['-fvisibility=hidden']
+if macos:
+	# on macos, the linker is not GNU ld
+	CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
+	CC['visibilityhidden'] = []
+else:
+	CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
+	CC['visibilityhidden'] = ['-fvisibility=hidden']
 CC['sharedobject'] = ['-fPIC']
 
 CC['profile']   = ['-pg']

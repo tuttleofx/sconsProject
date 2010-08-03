@@ -465,7 +465,7 @@ def enable_modules(self, modules, debug=False, crosscompiling=False) :
 			self.AppendUnique(CPPPATH=[os.path.join("$QTDIR","include","qt4","QtAssistant")])
 			pcmodules.remove("QtAssistant")
 			pcmodules.append("QtAssistantClient")
-		self.ParseConfig('pkg-config %s --libs --cflags'% ' '.join(pcmodules))
+		#self.ParseConfig('pkg-config %s --libs --cflags'% ' '.join(pcmodules))
 		self["QT4_MOCCPPPATH"] = self["CPPPATH"]
 		return
 	if sys.platform == "win32" or crosscompiling :

@@ -2,13 +2,16 @@ from _base import *
 
 class LibWithHeaderChecker(BaseLibChecker):
 
-	def __init__(self, libname, header, language, name=None, call=None, dependencies=[], defines=[] ):
-		self.libname  = libname
+	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], defines=[] ):
+		self.libname  = libs
 		self.header   = header
 		self.language = language
 		self.call = call
 		if not name:
-			self.name = libname
+			if isinstance(libs, list):
+				self.name = libs[0]
+			else:
+				self.name = libs
 		else:
 			self.name = name
 		self.dependencies = dependencies
@@ -32,12 +35,15 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 class LibChecker(BaseLibChecker):
 
-	def __init__(self, libname, name=None, dependencies=[], defines=[] ):
+	def __init__(self, libs, name=None, dependencies=[], defines=[] ):
 		if not name:
-			self.name = libname
+			if isinstance(libs, list):
+				self.name = libs[0]
+			else:
+				self.name = libs
 		else:
 			self.name = name
-		self.libname = libname
+		self.libname = libs
 		self.dependencies = dependencies
 		self.defines = defines
 
@@ -90,4 +96,37 @@ class HeaderChecker(BaseLibChecker):
 		return result
 
 
+class FrameworkChecker(BaseLibChecker):
+
+	def __init__(self, frameworks, header, language, name=None, call=None, dependencies=[], defines=[] ):
+		if not macos:
+			raise LogicError( 'Frameworks exists only on MacOS.' )
+		if not name:
+			if isinstance(frameworks, list):
+				self.name = frameworks[0]
+			else:
+				self.name = frameworks
+		else:
+			self.name = name
+		self.header   = header
+		self.language = language
+		self.frameworks = frameworks
+		self.call     = call
+		self.defines  = defines
+		self.dependencies = dependencies
+		self.libs = []
+
+	def initOptions(self, project, opts):
+		BaseLibChecker.initOptions(self, project, opts)
+		opts.Add( 'fwdir_'+self.name, 'Framework directory for '+self.name,     None )
+		return True
+
+	def check(self, conf):
+		if not self.enabled(conf.env):
+			return True
+		conf.env.AppendUnique( CPPDEFINES = self.defines )
+		result = self.CheckFrameworkWithHeader( conf, self.frameworks, self.header, self.language, call=self.call )
+		self.checkDone = True
+		#print 'checkDone LibWithHeaderChecker: ', result
+		return result
 
