@@ -589,12 +589,16 @@ class SConsProject:
 
 #-------------------------------- Autoconf ------------------------------------#
 	def appendDict( self, dst, src ):
+		'''
+		Append the src dict into dst.
+		If elements are not a list type, put it into a list to merge the values.
+		'''
 		for k, v in src.items():
 			if k in dst:
 				if isinstance(dst[k], list):
 					dst[k] += v if isinstance(v, list) else [v]
 				else:
-					dst[k] = dst[k] + v if isinstance(v, list) else [v]
+					dst[k] = dst[k] + (v if isinstance(v, list) else [v])
 			else:
 				dst[k] = v
 
@@ -613,8 +617,11 @@ class SConsProject:
 
 	def StaticLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
-	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
-		'''To create a StaticLibrary and expose it in the project to be simply used by other targets.'''
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], shared=False ):
+		'''
+		To create a StaticLibrary and expose it in the project to be simply used by other targets.
+		The shared option allows to create a static library compiled with position independant code (like in shared libraries).
+		'''
 		sourcesFiles = []
 		sourcesFiles += sources
 		if dirs:
@@ -639,6 +646,12 @@ class SConsProject:
 			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
 			localEnv.AppendUnique( **globalEnvFlags )
+
+		if shared:
+			localEnv.AppendUnique( CCFLAGS = self.CC['sharedobject'] )
+			localEnv['OBJSUFFIX'] = '.os'
+			localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
+			localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
 
 		# create the target
 		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
@@ -713,20 +726,6 @@ class SConsProject:
 		setattr(self.libs, target, dstLibChecker)
 
 		return dstLibInstall
-
-	def StaticSharedLibrary( self, target, sources=[], dirs=[], libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
-							 externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
-							 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
-		'''To create a StaticLibrary compiled with position independant code (like in shared libraries), and expose it in the project to be simply used by other targets.'''
-		newLocalEnvFlags = {}
-		newLocalEnvFlags.update( localEnvFlags )
-		self.appendDict( newLocalEnvFlags, { 'CCFLAGS': self.CC['sharedobject'] } )
-		newReplaceLocalEnvFlags = {}
-		newReplaceLocalEnvFlags.update( replaceLocalEnvFlags )
-		newReplaceLocalEnvFlags['OBJSUFFIX'] = '.os'
-		return self.StaticLibrary( target=target, sources=sources, dirs=dirs, libraries=libraries, includes=includes, localEnvFlags=newLocalEnvFlags, replaceLocalEnvFlags=newReplaceLocalEnvFlags,
-								   externEnvFlags=externEnvFlags, globalEnvFlags=globalEnvFlags, dependencies=dependencies, installDir=installDir, install=install,
-								   accept=accept, reject=reject )
 
 
 #-------------------- Automatic file/directory search -------------------------#
