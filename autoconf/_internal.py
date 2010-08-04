@@ -42,5 +42,5 @@ class InternalLibChecker(BaseLibChecker):
 	def postconfigure(self, project, env):
 		'''Don't check for local lib, so we only add it.'''
 		if self.lib:
-			env.AppendUnique( LIBS = self.lib )
+			env.PrependUnique( LIBS = self.lib )
 

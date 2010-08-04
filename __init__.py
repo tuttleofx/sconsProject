@@ -11,7 +11,7 @@ import string
 import subprocess
 
 import autoconf
-import compilators
+import compiler
 from utils import *
 from utils.colors import *
 
@@ -21,6 +21,8 @@ class SConsProject:
 	This is a base class helper for SCons build tool.
 	In your SConstruct simply do:
 
+	########################################
+	# Example 1
 	from sconsProject import SConsProject
 
 	project = SConsProject()
@@ -32,8 +34,11 @@ class SConsProject:
 	project.SConscript()
 	project.end()
 
+	########################################
+	# Example 2
 	# If you have common creation things in your project, create a class for your project which inherite this class.
-	# So this function is accessible in all SConscript.
+	# So this function is accessible in all SConscript files.
+	# You can also overload some SConsProject function to cusomize it.
 	class MyProject( SConsProject ):
 
 		def createCustomPlugins( self, sources=[], libs=[] ):
@@ -46,8 +51,15 @@ class SConsProject:
 			plugin = env_local.SharedLibrary( target=pluginName, source=sources )
 			env_local.InstallAs( self.inOutputBin(), plugin )
 
-	# and just replace
 	project = MyProject()
+	libs = project.libs
+	Export('project')
+	Export('libs')
+
+	project.begin()
+	project.SConscript()
+	project.end()
+	########################################
 	'''
 	now               = strftime("%Y-%m-%d_%Hh%Mm%S", localtime())
 	osname            = os.name.lower()
@@ -65,15 +77,19 @@ class SConsProject:
 	dir_output_test   = 'undefined'               #
 	dir_sconsProject  = os.path.abspath(os.path.dirname(__file__)) # directory containing this file
 
-	compilator        = ""
+	compiler        = ""
 	libs              = autoconf
 	commonLibs        = [libs.sconsProject]
-	libs_help         = [] # temporary list which contains all librairies already added to help
+	libs_help         = [] # temporary list of librairies already added to help
 	libs_error        = [] # list of libraries with autoconf error
+	allLibsChecked    = [] # temporary list of librairies already checked
 	env               = Environment(tools=['default', 'packaging', 'doxygen', 'unittest',
 									'qt4'], toolpath=[dir_sconsProject + "/tools"])
 
 	def __init__(self):
+		'''
+		Initialisation of variables depending on computer.
+		'''
 		if self.osname == "nt":
 			self.packagetype    = 'msi'
 		else:
@@ -101,6 +117,9 @@ class SConsProject:
 
 	#------------------------------------ Utils -----------------------------------#
 	def printInfos(self):
+		'''
+		Print information at compilation's begining.
+		'''
 		sys.stdout.write(self.env['color_info'])
 		print ':' * 80
 		print '::' + ' '*32, self.env['mode'], 'mode'
@@ -115,8 +134,8 @@ class SConsProject:
 		print ':: osname             = ' + self.osname
 		print ':: sysplatform        = ' + self.sysplatform
 		print ':: hostname           = ' + self.hostname
-		print ':: compilator c       = ' + self.env['CC'] + (' (' + self.env['CCVERSION'] + ')' if 'CCVERSION' in self.env and self.env['CCVERSION'] else '')
-		print ':: compilator c++     = ' + self.env['CXX'] + (' (' + self.env['CXXVERSION'] + ')' if 'CXXVERSION' in self.env and self.env['CXXVERSION'] else '')
+		print ':: compiler c         = ' + self.env['CC'] + (' (' + self.env['CCVERSION'] + ')' if 'CCVERSION' in self.env and self.env['CCVERSION'] else '')
+		print ':: compiler c++       = ' + self.env['CXX'] + (' (' + self.env['CXXVERSION'] + ')' if 'CXXVERSION' in self.env and self.env['CXXVERSION'] else '')
 		print ':: parallel jobs      = %d' % (GetOption('num_jobs'))
 		if self.env['ccache']:
 			print ':: ccachedir          = ' + self.env['ccachedir']
@@ -124,6 +143,9 @@ class SConsProject:
 		sys.stdout.write(self.env['color_clear'])
 
 	def printEnv(self, env=None, keys=[]):
+		'''
+		Debug function to display all environement options.
+		'''
 		if not env:
 			print ':' * 20, ' env ', ':' * 20
 			env = self.env
@@ -183,6 +205,7 @@ class SConsProject:
 		return ldirs
 
 	def inBuildDir(self, * dirs):
+		'''Returns "dirs" as subdirectories of temporary "buildDir".'''
 		if not dirs:
 			return string.replace(os.getcwd(), self.dir, self.dir_output_build)
 		return [string.replace(d, self.dir, self.dir_output_build) for d in dirs]
@@ -194,30 +217,31 @@ class SConsProject:
 			return basedir
 		return [basedir + d for d in dirs]
 
-	def inOutputDir(self, * dirs):
+	def inOutputDir(self, *dirs):
+		'''Returns "dirs" as subdirectories of "outputDir".'''
 		if not dirs:
 			return self.dir_output
 		return [ os.path.join( self.inOutputDir(), d ) for d in dirs ]
 
-	def inOutputLib(self, * dirs):
+	def inOutputLib(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputLib".'''
 		if not dirs:
 			return self.dir_output_lib
 		return [ os.path.join( self.inOutputLib(), d ) for d in dirs ]
 
-	def inOutputHeaders(self, * dirs):
+	def inOutputHeaders(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputHeaders".'''
 		if not dirs:
 			return self.dir_output_header
 		return [ os.path.join( self.inOutputHeaders(), d ) for d in dirs ]
 
-	def inOutputBin(self, * dirs):
+	def inOutputBin(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputBin".'''
 		if not dirs:
 			return self.dir_output_bin
 		return [ os.path.join( self.inOutputBin(), d ) for d in dirs ]
 
-	def inOutputTest(self, * dirs):
+	def inOutputTest(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputTest".'''
 		if not dirs:
 			return self.dir_output_test
@@ -231,6 +255,10 @@ class SConsProject:
 		'''If the target builds nothing, we don't need to call the configure function.'''
 		return not GetOption('clean') and not GetOption('help')
 
+	def needCheck(self):
+		'''If we check all libraries before compiling.'''
+		return self.env['check_libs']
+
 	#------------------------- Compilation options ----------------------------#
 	def initOptions(self):
 		'''
@@ -239,33 +267,33 @@ class SConsProject:
 		'''
 		if self.osname == "nt" and self.sysplatform.startswith("win"):
 			self.win           = True
-			self.compilator    = compilators.visual
+			self.compiler    = compiler.visual
 		else:
 			self.win           = False
-			self.compilator    = compilators.gcc
-		self.CC         = self.compilator.CC
-		self.ccversion  = self.compilator.version(self.compilator.ccBin)
-		self.cxxversion = self.compilator.version(self.compilator.cxxBin)
+			self.compiler    = compiler.gcc
+		self.CC         = self.compiler.CC
+		self.ccversion  = self.compiler.version(self.compiler.ccBin)
+		self.cxxversion = self.compiler.version(self.compiler.cxxBin)
 
 		# options from command line or configuration file
 		self.opts = self.createOptions(self.sconf_files, ARGUMENTS)
-		self.opts_help = self.createOptions(self.sconf_files, ARGUMENTS)
 		self.defineHiddenOptions(self.opts)
+		self.opts_help = self.createOptions(self.sconf_files, ARGUMENTS)
 
 		self.opts.Update(self.env)
 
 		if 'icecc' in self.env['CC']:
-			self.env['CCVERSION'] = self.compilator.version(self.env['ICECC_CC'])
-			self.env['CXXVERSION'] = self.compilator.version(self.env['ICECC_CXX'])
+			self.env['CCVERSION'] = self.compiler.version(self.env['ICECC_CC'])
+			self.env['CXXVERSION'] = self.compiler.version(self.env['ICECC_CXX'])
 			self.env['ENV']['ICECC_CC'] = self.env['ICECC_CC']
 			self.env['ENV']['ICECC_CXX'] = self.env['ICECC_CXX']
 		else:
-			self.env['CCVERSION'] = self.compilator.version(self.env['CC'])
-			self.env['CXXVERSION'] = self.compilator.version(self.env['CXX'])
+			self.env['CCVERSION'] = self.compiler.version(self.env['CC'])
+			self.env['CXXVERSION'] = self.compiler.version(self.env['CXX'])
 
 	def createOptions(self, filename, args):
 		'''
-		Define basics options.
+		Define options.
 		'''
 		opts = Variables(filename, args)
 
@@ -282,13 +310,13 @@ class SConsProject:
 		opts.Add(BoolVariable('clean', 'Remove all the build directory', False))
 		opts.Add(BoolVariable('ignore_errors', 'Ignore any configuration errors', False))
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
-		opts.Add(BoolVariable('ccache', 'Enable compilator cache system (ccache style)', False))
+		opts.Add(BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True))
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
-		opts.Add('CC', 'Specify the C Compiler', self.compilator.ccBin)
-		opts.Add('CXX', 'Specify the C++ Compiler', self.compilator.cxxBin)
+		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
+		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
 		opts.Add(PathVariable('ENVINC', 'Additional include path (at compilation)', '', PathVariable.PathAccept))
 		opts.Add(PathVariable('ENVPATH', 'Additional bin path (at compilation)', '', PathVariable.PathAccept))
@@ -306,8 +334,8 @@ class SConsProject:
 		opts.Add('CXXFLAGS', 'Additional C++ flags', [])
 		opts.Add('LINKFLAGS', 'Additional linker flags', [])
 
-		opts.Add('ICECC_CC', 'Compilator', self.compilator.ccBin)
-		opts.Add('ICECC_CXX', 'Compilator', self.compilator.cxxBin)
+		opts.Add('ICECC_CC', 'Compilator', self.compiler.ccBin)
+		opts.Add('ICECC_CXX', 'Compilator', self.compiler.cxxBin)
 		opts.Add('ICECC_VERSION', 'Compilator', '')
 
 		opts.Add(PathVariable('EXTLIBRARIES', 'Directory of external libraries', '.', PathVariable.PathAccept))
@@ -372,8 +400,9 @@ class SConsProject:
 
 	def applyOptionsOnProject(self):
 		'''
+		Some options are used to modify the project (common to the whole compilation).
 		'''
-		subpath = os.path.join(self.hostname, '-'.join([self.compilator.name, self.env['CCVERSION']]), self.env['mode'])
+		subpath = os.path.join(self.hostname, '-'.join([self.compiler.name, self.env['CCVERSION']]), self.env['mode'])
 		self.dir_output_build  = os.path.join(self.env['BUILDDIR'], self.dir_build_name, subpath)
 		install_dir = os.path.join(self.env['DISTDIR'], self.dir_output_name, subpath)
 		if self.env['install']:
@@ -404,6 +433,9 @@ class SConsProject:
 
 
 	def applyOptionsOnEnv(self, env):
+		'''
+		Some options are used to modify others.
+		'''
 
 		env.PrependENVPath('INCLUDE', self.env['ENVINC'])
 		env.PrependENVPath('PATH', self.env['ENVPATH'])
@@ -415,6 +447,9 @@ class SConsProject:
 
 
 	def begin(self):
+		'''
+		The begining function the SConstruct need to call at first of all.
+		'''
 
 		self.initOptions()
 		self.applyOptionsOnProject()
@@ -429,6 +464,9 @@ class SConsProject:
 
 
 	def end(self):
+		'''
+		The last function call at the end by the SConstruct.
+		'''
 
 		# by default compiles the target 'all'
 		Default('all')
@@ -501,7 +539,6 @@ class SConsProject:
 		Create an environment from the common one and apply libraries configuration to this environment.
 		@todo : add opts=[] ?
 		'''
-		sys.stdout.write(self.env['color_autoconf']) # print without new line
 		new_env = self.env.Clone()
 		new_libs = list(libs)
 		for lib in self.commonLibs:
@@ -524,37 +561,20 @@ class SConsProject:
 			env['SconsProjectLibraries'] = libs
 
 		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
-
-		def uniqLibs(allLibs):
-			libs = []
-			names = []
-			for s in allLibs:
-				if s.name not in names:
-					names.append( s.name )
-					libs.append( s )
-			return libs
-
-		def recursiveFindLibs(lib):
-			if not lib:
-				return []
-			ll = []
-			ll.append( lib )
-			for l in lib.dependencies:
-				ll.extend( recursiveFindLibs(l) )
-			return ll
+		self.defineHiddenOptions(opts_current)
 		
 		allLibs = []
 		for eachlib in libs:
-			libdeps = recursiveFindLibs(eachlib)
+			libdeps = self.findLibsDependencies(eachlib)
 			allLibs.extend( libdeps )
-		allLibs = uniqLibs(allLibs)
+			allLibs.append( eachlib )
+		allLibs = self.uniqLibs(allLibs)
 
-		#print '-'*10
 		#print 'libs:', [a.name for a in libs]
 		#print 'allLibs:', [a.name for a in allLibs]
+		#print '-'*10
 		
 		for lib in allLibs:
-			self.defineHiddenOptions(opts_current)
 			if not lib.initOptions(self, opts_current):
 				if lib not in self.libs_error:
 					self.libs_error.append(lib)
@@ -562,28 +582,112 @@ class SConsProject:
 				lib.initOptions(self, self.opts_help)
 				self.libs_help.append(lib)
 		opts_current.Update(env)
-		self.applyOptionsOnEnv(env) # needed ? we copy the project environment so it already have this properties, isn't it ?
+		self.applyOptionsOnEnv(env)
 
 		if self.needConfigure():
-			conf = env.Configure()
 			for lib in allLibs:
 				if not lib.enabled(env):
-					print( 'Target "', name, '" compiled without ', lib.name, '.' )
+					print( 'Target "', name, '" compiled without "', lib.name, '" library.' )
 				else:
+					self.checkLibrary( lib )
+
 					if not lib.configure(self, env):
 						if lib not in self.libs_error:
 							self.libs_error.append(lib)
-					#elif self.env['check_libs']:
-					elif not lib.check(self, conf):
-						if lib not in self.libs_error:
-							self.libs_error.append(lib)
-			env = conf.Finish()
+					else:
+						conf = env.Configure()
+						if not lib.check(self, conf):
+							if lib not in self.libs_error:
+								self.libs_error.append(lib)
+						env = conf.Finish()
 
 		for lib in allLibs:
 			lib.postconfigure(self, env)
 
 		sys.stdout.write(self.env['color_clear'])
+
 		return env
+
+	def checkLibrary( self, lib=None ):
+		'''
+		Create a temporary environment, apply all library dependencies and do
+		a check on lib.
+		'''
+		if lib.checkDone:
+			return
+		
+		if lib.name in self.allLibsChecked:
+			#print 'Already checked ', lib.name
+			lib.checkDone = True
+			return
+		
+		#print '_'*20
+		#print 'checkLibrary: ', lib.name
+
+		if not self.needCheck():
+			lib.checkDone = True
+			self.allLibsChecked.append( lib.name )
+			return
+
+		dependencies = self.uniqLibs( self.findLibsDependencies(lib) )
+
+		check_env = self.env.Clone()
+
+		check_opts = self.createOptions(self.sconf_files, ARGUMENTS)
+		self.defineHiddenOptions(check_opts)
+		for a in dependencies + [lib]:
+			if not a.initOptions(self, check_opts):
+				if a not in self.libs_error:
+					self.libs_error.append(a)
+		check_opts.Update(check_env)
+		self.applyOptionsOnEnv(check_env)
+
+		for a in dependencies + [lib]:
+			if not a.configure(self, check_env):
+				if a not in self.libs_error:
+					self.libs_error.append(a)
+			else:
+				check_conf = check_env.Configure()
+				if not a.check(self, check_conf):
+					if a not in self.libs_error:
+						self.libs_error.append(a)
+				check_env = check_conf.Finish()
+
+		lib.checkDone = True
+		self.allLibsChecked.append( lib.name )
+
+	def uniqLibs(self, allLibs):
+		'''
+		Return the list of libraries contains in allLibs without any duplication.
+		'''
+		libs = []
+		names = []
+		for s in allLibs:
+			if s.name not in names:
+				names.append( s.name )
+				libs.append( s )
+		return libs
+
+	def findLibsDependencies(self, libs):
+		'''
+		return the list of all dependencies of lib (without the lib itself).
+		'''
+		def internFindLibDependencies(lib):
+			if not lib:
+				return []
+			ll = []
+			for l in lib.dependencies:
+				ll.extend( internFindLibDependencies(l) )
+			ll.append(lib)
+			return ll
+		
+		if not isinstance(libs, list):
+			libs = [libs]
+		ll = []
+		for lib in libs:
+			for l in lib.dependencies:
+				ll.extend( internFindLibDependencies(l) )
+		return ll
 
 # todo
 #    def Install(self):
@@ -680,7 +784,9 @@ class SConsProject:
 	def SharedLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
-		'''To create a SharedLibrary and expose it in the project to be simply used by other targets.'''
+		'''
+		To create a SharedLibrary and expose it in the project to be simply used by other targets.
+		'''
 		sourcesFiles = []
 		sourcesFiles += sources
 		if dirs:
@@ -733,10 +839,16 @@ class SConsProject:
 
 #-------------------- Automatic file/directory search -------------------------#
 	def recursiveDirs(self, root):
+		'''
+		List of subdirectories.
+		'''
 		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
 
 	def unique(self, sourcesList):
-		# element order preserved
+		'''
+		Removes duplicates.
+		Element order preserved.
+		'''
 		unique_trick = [uniq for uniq in sourcesList if uniq not in locals()['_[1]']]
 		return unique_trick
 
@@ -766,13 +878,19 @@ class SConsProject:
 			files += self.scanFilesInDir(d, accept, reject)
 		return files
 
-	def subdirs(self, files):
+	def dirnames(self, files):
+		'''
+		Returns the list of files dirname.
+		'''
 		dirs = self.unique(map(os.path.dirname, files))
 		dirs.sort()
 		return dirs
 
 	def subdirsContaining(self, dir, patterns):
-		dirs = self.subdirs(self.scanFiles(dir, accept=patterns))
+		'''
+		Returns all sub directories of 'dir' containing a file matching 'patterns'.
+		'''
+		dirs = self.dirnames(self.scanFiles(dir, accept=patterns))
 		dirs.sort()
 		return dirs
 

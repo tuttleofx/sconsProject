@@ -26,8 +26,6 @@ class LibWithHeaderChecker(BaseLibChecker):
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLibWithHeader( conf, self.libname, self.header, self.language, call=self.call )
-		self.checkDone = True
-		#print 'checkDone LibWithHeaderChecker: ', result
 		return result
 
 
@@ -54,8 +52,6 @@ class LibChecker(BaseLibChecker):
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLib( conf, self.libname )
-		self.checkDone = True
-		#print 'checkDone LibChecker: ', result
 		return result
 
 
@@ -85,8 +81,6 @@ class HeaderChecker(BaseLibChecker):
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
-		self.checkDone = True
-		#print 'checkDone HeaderChecker: ', result
 		return result
 
 
@@ -118,7 +112,5 @@ class FrameworkChecker(BaseLibChecker):
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckFrameworkWithHeader( conf, self.frameworks, self.header, self.language, call=self.call )
-		self.checkDone = True
-		#print 'checkDone LibWithHeaderChecker: ', result
 		return result
 
