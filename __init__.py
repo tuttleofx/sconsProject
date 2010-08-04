@@ -446,6 +446,16 @@ class SConsProject:
 				env[c] = ''
 
 
+	def SConscript(self, dirs=[], exports=[]):
+		'''
+		To include SConscript from SConstruct, this automatically define variantdirs.
+		'''
+		if not dirs:
+			SConscript( self.inBuildDir(self.getAbsoluteCwd('SConscript')), exports=exports )
+		else:
+			for d in dirs:
+				SConscript( dirs=self.inBuildDir(d), exports=exports )
+
 	def begin(self):
 		'''
 		The begining function the SConstruct need to call at first of all.
