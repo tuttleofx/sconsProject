@@ -60,8 +60,16 @@ class BaseLibChecker(object):
 			env.AppendUnique( LIBPATH=env['libdir_'+self.name] )
 
 		if macos:
-			if self.enabled(env,'fwdir_'+self.name):
-				env.Append( LINKFLAGS=reduce(add, [ ['-F',f] for f in env['fwdir_'+self.name]], []) )
+			if self.enabled(env,'fwkdir_'+self.name):
+				fwkdir = env['fwkdir_'+self.name]
+				if isinstance(fwkdir, list):
+					fwkFlags = ['-F'+f for f in fwkdir]
+					env.Append( LINKFLAGS=fwkFlags )
+					env.Append( CCFLAGS=fwkFlags )
+				elif isinstance(fwkdir, str):
+					fwkFlags = '-F'+fwkdir
+					env.Append( LINKFLAGS=fwkFlags )
+					env.Append( CCFLAGS=fwkFlags )
 
 		return True
 
@@ -81,6 +89,8 @@ class BaseLibChecker(object):
 	def useFramework(self, env):
 		if not macos:
 			return False
+		if 'fwkdir_'+self.name not in env:
+			return False
 		return env['fwkdir_'+self.name] != None
 	
 	def privateCheckLibWithHeader( self, conf, libs, header, language, call=False ):
@@ -99,7 +109,7 @@ class BaseLibChecker(object):
 		if not isinstance(framework, list):
 			framework = [framework]
 		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
-		self.CheckLibWithHeader( conf, libs=[], header=header, language=language )
+		self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
 		return True
 
 	def privateCheckLib( self, conf, libs ):
@@ -117,7 +127,7 @@ class BaseLibChecker(object):
 		if not isinstance(framework, list):
 			framework = [framework]
 		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
-		self.CheckLib( conf, libs=[] )
+		self.privateCheckLib( conf, libs=[] )
 		return True
 
 	def CheckLibWithHeader( self, conf, libs, header, language, call=False ):

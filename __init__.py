@@ -65,6 +65,11 @@ class SConsProject:
 	osname            = os.name.lower()
 	sysplatform       = sys.platform.lower()
 	hostname          = socket.gethostname()
+	windows           = osname == "nt" and sysplatform.startswith("win")
+	macos             = sysplatform.startswith("darwin")
+	linux             = not windows and not macos
+	unix              = not windows
+
 	compil_mode       = 'unknown_mode'
 	dir               = os.getcwd()
 	dir_build_name    = '.dist'                   # base dir name for all intermediate compilation objects
