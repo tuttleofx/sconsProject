@@ -3,10 +3,7 @@ from _base import *
 class LibWithHeaderChecker(BaseLibChecker):
 
 	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], defines=[] ):
-		if not isinstance( libs, list ):
-			self.libs = [libs]
-		else:
-			self.libs = libs
+		self.libs = asList(libs)
 		self.header   = header
 		self.language = language
 		self.call = call
@@ -28,7 +25,7 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckLibWithHeader( conf, self.libs, self.header, self.language, call=self.call )
+		result = self.CheckLibWithHeader( conf, self.getLibs(conf.env), self.header, self.language, call=self.call )
 		return result
 
 
@@ -42,10 +39,7 @@ class LibChecker(BaseLibChecker):
 				self.name = libs
 		else:
 			self.name = name
-		if not isinstance( libs, list ):
-			self.libs = [libs]
-		else:
-			self.libs = libs
+		self.libs = asList(libs)
 		self.dependencies = dependencies
 		self.defines = defines
 
@@ -57,7 +51,7 @@ class LibChecker(BaseLibChecker):
 
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckLib( conf, self.libs )
+		result = self.CheckLib( conf, self.getLibs(conf.env) )
 		return result
 
 
@@ -69,7 +63,7 @@ class HeaderChecker(BaseLibChecker):
 		self.language = language
 		self.dependencies = dependencies
 		self.defines = defines
-		self.libs = libs
+		self.libs = asList(libs)
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
@@ -81,46 +75,10 @@ class HeaderChecker(BaseLibChecker):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''
-		env.AppendUnique( LIBS = self.libs )
+		env.AppendUnique( LIBS = self.getLibs(env) )
 		return True
 
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		return result
-
-
-class FrameworkChecker(BaseLibChecker):
-
-	def __init__(self, frameworks, header, language, name=None, call=None, dependencies=[], defines=[] ):
-		if not macos:
-			raise LogicError( 'Frameworks exists only on MacOS.' )
-		if not name:
-			if isinstance(frameworks, list):
-				self.name = frameworks[0]
-			else:
-				self.name = frameworks
-		else:
-			self.name = name
-		self.header   = header
-		self.language = language
-
-		if not isinstance( frameworks, list ):
-			self.frameworks = [frameworks]
-		else:
-			self.frameworks = frameworks
-		self.call     = call
-		self.defines  = defines
-		self.dependencies = dependencies
-		self.libs = []
-
-	def initOptions(self, project, opts):
-		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'fwdir_'+self.name, 'Framework directory for '+self.name,     None )
-		return True
-
-	def check(self, project, conf):
-		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckFrameworkWithHeader( conf, self.frameworks, self.header, self.language, call=self.call )
-		return result
-

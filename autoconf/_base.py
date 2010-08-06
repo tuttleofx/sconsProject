@@ -94,6 +94,9 @@ class BaseLibChecker(object):
 			return False
 		return env['fwkdir_'+self.name] != None
 	
+	def getLibs(self, env):
+		return env[self.name]
+
 	def privateCheckLibWithHeader( self, conf, libs, header, language, call=False ):
 		if conf.env['check_libs'] and not self.checkDone:
 			if isinstance(libs, list) and len(libs) > 1:
