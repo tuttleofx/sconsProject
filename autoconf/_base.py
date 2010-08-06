@@ -108,7 +108,9 @@ class BaseLibChecker(object):
 	def privateCheckFrameworkWithHeader( self, conf, framework, header, language, call=False ):
 		if not isinstance(framework, list):
 			framework = [framework]
-		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
+		fwk = reduce(add, [ ['-framework',f] for f in framework], [])
+		conf.env.Append( LINKFLAGS = fwk )
+		#conf.env.Append( CCFLAGS = fwk )
 		self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
 		return True
 

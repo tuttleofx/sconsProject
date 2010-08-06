@@ -15,7 +15,6 @@ import compiler
 from utils import *
 from utils.colors import *
 
-
 class SConsProject:
 	'''
 	This is a base class helper for SCons build tool.
@@ -26,9 +25,8 @@ class SConsProject:
 	from sconsProject import SConsProject
 
 	project = SConsProject()
-	libs = project.libs
 	Export('project')
-	Export('libs')
+	Export({'libs':project.libs})
 
 	project.begin()
 	project.SConscript()
@@ -52,9 +50,8 @@ class SConsProject:
 			env_local.InstallAs( self.inOutputBin(), plugin )
 
 	project = MyProject()
-	libs = project.libs
 	Export('project')
-	Export('libs')
+	Export({'libs':project.libs})
 
 	project.begin()
 	project.SConscript()
