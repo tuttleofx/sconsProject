@@ -5,6 +5,7 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
 
     def __init__( self ):
         self.name  = 'boost_unittestframework'
+        self.libs  = [self.name]
         self.language = 'c++',
         self.dependencies=[boost]
 
@@ -19,9 +20,8 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
         return True
 
     def check(self, project, conf):
-        result = self.CheckLib(conf, 'boost_unit_test_framework' ) #, None, None, self.language)
+        result = self.CheckLib(conf, self.libs ) #, None, None, self.language)
         #or result = self.CheckLib(conf, 'boost_unit_test_framework' ) #, None, None, self.language)
-        self.checkDone = True
         return result
 
 

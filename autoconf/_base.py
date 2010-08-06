@@ -10,13 +10,18 @@ macos = sys.platform.lower().startswith("darwin")
 linux = not windows and not macos
 unix = not windows
 
+def asList(v):
+	'''Return v inside a list if not a list.'''
+	if isinstance(v, list):
+		return v
+	return [v]
+
 class BaseLibChecker(object):
 	'''
 	Base class for lib checkers.
 	'''
 	error        = ''
 	name         = 'name-empty'
-	libname      = 'libname-empty'
 	language     = 'c'
 	dependencies = []
 	checkDone    = False
@@ -38,7 +43,8 @@ class BaseLibChecker(object):
 		'''
 		Init options for enable/disable or configure the library.
 		'''
-		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'Enable compilation with '+self.name, True  ) )
+		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'Enable compilation with '+self.name, True ) )
+		opts.Add( self.name, 'To customize the libraries names if particular on your platform or compiled version.', self.libs )
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
 
@@ -47,7 +53,7 @@ class BaseLibChecker(object):
 		Add things to the environment.
 		'''
 		# project.printEnv( env, keys=[ 'with_'+self.name, 'incdir_'+self.name, 'libdir_'+self.name, ] )
-		#env.ParseConfig('pkg-config --cflags --libs ' + self.libname)
+		#env.ParseConfig('pkg-config --cflags --libs ' + self.libs)
 
 		env.AppendUnique( CPPDEFINES='with_'+self.name )
 		if self.enabled(env,'incdir_'+self.name):
@@ -61,15 +67,10 @@ class BaseLibChecker(object):
 
 		if macos:
 			if self.enabled(env,'fwkdir_'+self.name):
-				fwkdir = env['fwkdir_'+self.name]
-				if isinstance(fwkdir, list):
-					fwkFlags = ['-F'+f for f in fwkdir]
-					env.Append( LINKFLAGS=fwkFlags )
-					env.Append( CCFLAGS=fwkFlags )
-				elif isinstance(fwkdir, str):
-					fwkFlags = '-F'+fwkdir
-					env.Append( LINKFLAGS=fwkFlags )
-					env.Append( CCFLAGS=fwkFlags )
+				fwkdirs = asList(env['fwkdir_'+self.name])
+				fwkFlags = ['-F'+f for f in fwkdirs]
+				env.Append( LINKFLAGS=fwkFlags )
+				env.Append( CCFLAGS=fwkFlags )
 
 		return True
 
@@ -106,9 +107,8 @@ class BaseLibChecker(object):
 			return True
 
 	def privateCheckFrameworkWithHeader( self, conf, framework, header, language, call=False ):
-		if not isinstance(framework, list):
-			framework = [framework]
-		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
+		p_framework = asList(framework)
+		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in p_framework], []) )
 		self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
 		return True
 
@@ -124,8 +124,7 @@ class BaseLibChecker(object):
 			return True
 
 	def privateCheckFramework( self, conf, framework, language, call=False ):
-		if not isinstance(framework, list):
-			framework = [framework]
+		p_framework = asList(framework)
 		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
 		self.privateCheckLib( conf, libs=[] )
 		return True

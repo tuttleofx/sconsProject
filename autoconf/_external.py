@@ -3,7 +3,10 @@ from _base import *
 class LibWithHeaderChecker(BaseLibChecker):
 
 	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], defines=[] ):
-		self.libname  = libs
+		if not isinstance( libs, list ):
+			self.libs = [libs]
+		else:
+			self.libs = libs
 		self.header   = header
 		self.language = language
 		self.call = call
@@ -25,7 +28,7 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckLibWithHeader( conf, self.libname, self.header, self.language, call=self.call )
+		result = self.CheckLibWithHeader( conf, self.libs, self.header, self.language, call=self.call )
 		return result
 
 
@@ -39,7 +42,10 @@ class LibChecker(BaseLibChecker):
 				self.name = libs
 		else:
 			self.name = name
-		self.libname = libs
+		if not isinstance( libs, list ):
+			self.libs = [libs]
+		else:
+			self.libs = libs
 		self.dependencies = dependencies
 		self.defines = defines
 
@@ -51,7 +57,7 @@ class LibChecker(BaseLibChecker):
 
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckLib( conf, self.libname )
+		result = self.CheckLib( conf, self.libs )
 		return result
 
 
@@ -98,7 +104,11 @@ class FrameworkChecker(BaseLibChecker):
 			self.name = name
 		self.header   = header
 		self.language = language
-		self.frameworks = frameworks
+
+		if not isinstance( frameworks, list ):
+			self.frameworks = [frameworks]
+		else:
+			self.frameworks = frameworks
 		self.call     = call
 		self.defines  = defines
 		self.dependencies = dependencies

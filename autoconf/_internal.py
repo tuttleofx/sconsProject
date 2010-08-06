@@ -7,7 +7,7 @@ from _base import *
 class InternalLibChecker(BaseLibChecker):
 
 	def __init__(self, lib='', name='', includes=[], envFlags={}, dependencies=[], sconsNode=None ):
-		self.lib  = lib # the target (name of the library file without prefix or extension)
+		self.libs  = [lib] # the target (name of the library file without prefix or extension)
 		if name:
 			self.name = name
 		else:
@@ -36,11 +36,13 @@ class InternalLibChecker(BaseLibChecker):
 			env.AppendUnique( **(self.envFlags) )
 
 		# we don't set LIBPATH because it's setted by the project
+		# all internal libs are compiled in the same directory
+		# project.inOutputLib()
 
 		return True
 
 	def postconfigure(self, project, env):
 		'''Don't check for local lib, so we only add it.'''
-		if self.lib:
-			env.PrependUnique( LIBS = self.lib )
+		if self.libs:
+			env.PrependUnique( LIBS = self.libs )
 

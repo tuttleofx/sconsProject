@@ -853,17 +853,18 @@ class SConsProject:
 
 
 #-------------------- Automatic file/directory search -------------------------#
+	def asList(self, v):
+		'''Return v inside a list if not a list.'''
+		if isinstance(v, list):
+			return v
+		return [v]
+
 	def recursiveDirs(self, root):
-		'''
-		List of subdirectories.
-		'''
+		'''List of subdirectories.'''
 		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
 
 	def unique(self, sourcesList):
-		'''
-		Removes duplicates.
-		Element order preserved.
-		'''
+		'''Removes duplicates. Element order preserved.'''
 		unique_trick = [uniq for uniq in sourcesList if uniq not in locals()['_[1]']]
 		return unique_trick
 
@@ -871,13 +872,15 @@ class SConsProject:
 		'''
 		Recursively search files in "directory" that matches 'accepts' wildcards and don't contains "reject"
 		'''
+		l_accept = self.asList( accept )
+		l_reject = self.asList( reject )
 		sources = []
 		realcwd = self.getRealAbsoluteCwd()
 		paths = self.recursiveDirs( self.getRealAbsoluteCwd(directory) )
 		for path in paths:
-			for pattern in accept:
+			for pattern in l_accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
-		for pattern in reject:
+		for pattern in l_reject:
 			sources = filter((lambda a: a.rfind(pattern) == -1), sources)
 		# to relative paths (to allow scons variant_dir to recognize files...)
 		def toLocalDirs(d): return d.replace(realcwd + os.sep, '')
@@ -888,15 +891,14 @@ class SConsProject:
 		'''
 		Recursively search files in "dirs" that matches 'accepts' wildcards and don't contains "reject"
 		'''
+		l_dirs = self.asList( dirs )
 		files = []
-		for d in dirs:
+		for d in l_dirs:
 			files += self.scanFilesInDir(d, accept, reject)
 		return files
 
 	def dirnames(self, files):
-		'''
-		Returns the list of files dirname.
-		'''
+		'''Returns the list of files dirname.'''
 		dirs = self.unique(map(os.path.dirname, files))
 		dirs.sort()
 		return dirs

@@ -33,20 +33,20 @@ class Qt4Checker(LibWithHeaderChecker):
 #                'Qt3Support',
                 ], uiFiles = [], useLocalIncludes = True ):
         self.name  = 'qt4'
-        self.modules = modules
+        self.libs = modules
         self.uiFiles = uiFiles
         self.useLocalIncludes = useLocalIncludes
         
     def setModules(self, modules):
-        self.modules = modules
+        self.libs = modules
         
     def declareUiFiles(self, uiFiles):
         self.uiFiles = uiFiles
         
     def check(self, project, conf):
-        conf.env.EnableQt4Modules( self.modules, debug=False )
+        conf.env.EnableQt4Modules( self.libs, debug=False )
         result = True
-        for mod in self.modules:
+        for mod in self.libs:
             r = self.CheckLibWithHeader( conf, [mod], header=[mod+'/'+mod], language='c++' )
             if not r:
                 print 'error: ',mod

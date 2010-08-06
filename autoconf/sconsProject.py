@@ -6,7 +6,7 @@ class SConsProjectChecker(BaseLibChecker):
     '''
 
     def __init__( self ):
-        self.name  = 'SConsProject'
+        self.name  = 'sconsProject'
         pass
 
     def initOptions(self, project, opts):
