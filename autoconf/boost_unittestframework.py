@@ -4,7 +4,7 @@ from boost import *
 class BoostUnittestframeworkChecker(BaseLibChecker):
 
     def __init__( self ):
-        self.name  = 'boost_unittestframework'
+        self.name  = 'boost_unit_test_framework'
         self.libs  = [self.name]
         self.language = 'c++',
         self.dependencies=[boost]
