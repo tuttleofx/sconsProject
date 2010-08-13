@@ -40,8 +40,8 @@ CC['nooptimize'] =['-O0']
 
 
 CC['warning1']  = ['-Wall']
-CC['warning2']  = ['-Wall','-Wno-return-type']
-CC['warning3']  = ['-Wall','-Wno-return-type','-Winline']
+CC['warning2']  = ['-Wall','-Werror=return-type']
+CC['warning3']  = CC['warning2']+['-Winline']
 CC['warning4']  = CC['warning3']
 CC['nowarning'] = ['/w']
 
