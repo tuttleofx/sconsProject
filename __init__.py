@@ -599,7 +599,7 @@ class SConsProject:
 		if self.needConfigure():
 			for lib in allLibs:
 				if not lib.enabled(env):
-					print( 'Target "', name, '" compiled without "', lib.name, '" library.' )
+					print 'Target "'+name+'" compiled without "'+lib.name+'" library.'
 				else:
 					self.checkLibrary( lib )
 
@@ -627,6 +627,10 @@ class SConsProject:
 		'''
 		if lib.checkDone:
 			return
+
+		# if it's an internal library, no check
+		if lib.sconsNode:
+			return
 		
 		if lib.name in self.allLibsChecked:
 			#print 'Already checked ', lib.name
@@ -643,27 +647,34 @@ class SConsProject:
 
 		dependencies = self.uniqLibs( self.findLibsDependencies(lib) )
 
+		#print "_"*50
+		#print "lib.name:", lib.name
+		#print "dependencies:", [d.name for d in dependencies]
+
 		check_env = self.env.Clone()
 
 		check_opts = self.createOptions(self.sconf_files, ARGUMENTS)
 		self.defineHiddenOptions(check_opts)
-		for a in dependencies + [lib]:
-			if not a.initOptions(self, check_opts):
-				if a not in self.libs_error:
-					self.libs_error.append(a)
+		for a in dependencies:
+			a.initOptions(self, check_opts)
+		if not lib.initOptions(self, check_opts):
+			if lib not in self.libs_error:
+				self.libs_error.append(lib)
 		check_opts.Update(check_env)
 		self.applyOptionsOnEnv(check_env)
 
-		for a in dependencies + [lib]:
-			if not a.configure(self, check_env):
-				if a not in self.libs_error:
-					self.libs_error.append(a)
-			else:
-				check_conf = check_env.Configure()
-				if not a.check(self, check_conf):
-					if a not in self.libs_error:
-						self.libs_error.append(a)
-				check_env = check_conf.Finish()
+		for a in dependencies:
+			a.configure(self, check_env)
+		if not lib.configure(self, check_env):
+			if lib not in self.libs_error:
+				self.libs_error.append(lib)
+		check_conf = check_env.Configure()
+		for a in dependencies:
+			a.check(self, check_conf)
+		if not lib.check(self, check_conf):
+			if lib not in self.libs_error:
+				self.libs_error.append(lib)
+		check_env = check_conf.Finish()
 
 		lib.checkDone = True
 		self.allLibsChecked.append( lib.name )
@@ -782,6 +793,7 @@ class SConsProject:
 			localEnv.Depends( dstLib, internalLibsDepends )
 		
 		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
+		localEnv.Alias( target, dstLibInstall )
 
 		# expose this library
 		envFlags=externEnvFlags
@@ -837,6 +849,7 @@ class SConsProject:
 			localEnv.Depends( dstLib, internalLibsDepends )
 
 		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
+		localEnv.Alias( target, dstLibInstall )
 
 		# expose this library
 		envFlags=externEnvFlags
