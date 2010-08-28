@@ -366,7 +366,6 @@ class SConsProject:
 
 		buildDirName = '.dist' # base dir name for all intermediate compilation objects
 		distDirName = 'dist'   # base dir name for output build
-		opts.Add(PathVariable('LIBRARIESPATH', 'Directory of external libraries', '.', PathVariable.PathAccept))
 		opts.Add(PathVariable('BUILDPATH', 'Top directory of compilation tree', self.dir, PathVariable.PathIsDirCreate))
 		opts.Add(PathVariable('BUILDDIRNAME', 'Top directory of compilation tree', buildDirName, PathVariable.PathIsDirCreate))
 		opts.Add(PathVariable('DISTDIR', 'Top directory to output compiled files', self.dir, PathVariable.PathIsDirCreate))
