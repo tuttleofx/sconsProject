@@ -9,6 +9,7 @@ import os
 import socket
 import string
 import subprocess
+import getpass
 
 import autoconf
 import compiler
@@ -66,11 +67,10 @@ class SConsProject:
 	macos             = sysplatform.startswith("darwin")
 	linux             = not windows and not macos
 	unix              = not windows
+	user              = getpass.getuser()
 
 	compil_mode       = 'unknown_mode'
 	dir               = os.getcwd()
-	dir_build_name    = '.dist'                   # base dir name for all intermediate compilation objects
-	dir_output_name   = 'dist'                    # base dir name for output build
 	dir_output_build  = 'undefined'               #
 	dir_output        = 'undefined'               #
 	dir_output_bin    = 'undefined'               # name generated depending on compilation type,
@@ -79,7 +79,7 @@ class SConsProject:
 	dir_output_test   = 'undefined'               #
 	dir_sconsProject  = os.path.abspath(os.path.dirname(__file__)) # directory containing this file
 
-	compiler        = ""
+	compiler          = ""
 	libs              = autoconf
 	commonLibs        = [libs.sconsProject]
 	libs_help         = [] # temporary list of librairies already added to help
@@ -92,22 +92,48 @@ class SConsProject:
 		'''
 		Initialisation of variables depending on computer.
 		'''
-		if self.osname == "nt":
+		if self.windows:
 			self.packagetype    = 'msi'
 		else:
 			self.packagetype    = 'rpm'
 
-		if self.osname == "posix":
+		if self.unix:
 			if (os.uname()[4][-3:] == '_64'):
 				self.bits = 64
 			else:
 				self.bits = 32
-		elif self.osname == "nt":
+		elif windows:
 			self.bits = 32
 
-		self.sconf_files  = [os.path.join(self.dir_sconsProject, 'hostconf.py'), os.path.join(self.dir, 'hostconf.py'), os.path.join(self.dir, self.hostname + '.py')]
+		sconf = ['display',
+				 'default',
+				 'local',
+				 'user']
+		if self.unix:
+			sconf.append( 'unix' )
+			sconf.append( 'unix-'+str(self.bits) )
+		if self.linux:
+			sconf.append( 'linux' )
+			sconf.append( 'linux-'+str(self.bits) )
+		elif self.macos:
+			sconf.append( 'macos' )
+			sconf.append( 'macos-'+str(self.bits) )
+		elif self.windows:
+			sconf.append( 'windows' )
+			sconf.append( 'windows-'+str(self.bits) )
+		sconf.append( self.hostname )
+		sconf.append( self.user )
 
-		if self.osname == "nt":
+		sconf_sconsProject = ['display', 'default']
+
+		self.sconf_files = [
+		                     os.path.join(self.dir_sconsProject, s)+'.sconf' for s in sconf_sconsProject
+		                   ] + [
+						     os.path.join(self.dir, s)+'.sconf' for s in sconf
+						   ]
+		self.sconf_files = [ f for f in self.sconf_files if os.path.exists(f) ]
+
+		if self.windows:
 			self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
 
 		# scons optimizations...
@@ -267,11 +293,9 @@ class SConsProject:
 		Read options from configuration files and at last from the command line
 		(which has the last word)
 		'''
-		if self.osname == "nt" and self.sysplatform.startswith("win"):
-			self.win           = True
+		if self.windows:
 			self.compiler    = compiler.visual
 		else:
-			self.win           = False
 			self.compiler    = compiler.gcc
 		self.CC         = self.compiler.CC
 		self.ccversion  = self.compiler.version(self.compiler.ccBin)
@@ -340,10 +364,14 @@ class SConsProject:
 		opts.Add('ICECC_CXX', 'Compilator', self.compiler.cxxBin)
 		opts.Add('ICECC_VERSION', 'Compilator', '')
 
-		opts.Add(PathVariable('EXTLIBRARIES', 'Directory of external libraries', '.', PathVariable.PathAccept))
-		opts.Add(PathVariable('BUILDDIR', 'Top directory of compilation tree', self.dir, PathVariable.PathIsDirCreate))
-		opts.Add(PathVariable('DISTDIR', 'Top directory for output compiled files', self.dir, PathVariable.PathIsDirCreate))
-		opts.Add(PathVariable('INSTALLDIR', 'Top directory to install compiled files', os.path.join(self.dir, self.dir_output_name), PathVariable.PathIsDirCreate))
+		buildDirName = '.dist' # base dir name for all intermediate compilation objects
+		distDirName = 'dist'   # base dir name for output build
+		opts.Add(PathVariable('LIBRARIESPATH', 'Directory of external libraries', '.', PathVariable.PathAccept))
+		opts.Add(PathVariable('BUILDPATH', 'Top directory of compilation tree', self.dir, PathVariable.PathIsDirCreate))
+		opts.Add(PathVariable('BUILDDIRNAME', 'Top directory of compilation tree', buildDirName, PathVariable.PathIsDirCreate))
+		opts.Add(PathVariable('DISTDIR', 'Top directory to output compiled files', self.dir, PathVariable.PathIsDirCreate))
+		opts.Add(PathVariable('DISTDIRNAME', 'Directory name to output compiled files', distDirName, PathVariable.PathIsDirCreate))
+		opts.Add(PathVariable('INSTALLPATH', 'Top directory to install compiled files', os.path.join(self.dir, distDirName), PathVariable.PathIsDirCreate))
 
 		return opts
 
@@ -351,15 +379,14 @@ class SConsProject:
 		'''
 		Define basics options which don't need to be visible in the help.
 		'''
-
-		opts.Add(BoolVariable('visual', 'Compilator', True))
 		opts.Add(PathVariable('TOPDIR', 'Top directory', self.dir))
 
-		opts.Add('OSBITS', 'OS bits', self.bits)
-		opts.Add(BoolVariable('UNIX', 'operating system', not self.win))
-		opts.Add(BoolVariable('WINDOWS', 'operating system', self.win))
-
-		opts.Add('osname', 'OS name', 'windows' if self.win else 'unix')
+		opts.Add('osname', 'OS name', 'windows' if self.windows else 'unix')
+		opts.Add('osbits', 'OS bits', self.bits)
+		opts.Add(BoolVariable('unix', 'operating system', self.unix))
+		opts.Add(BoolVariable('windows', 'operating system', self.windows))
+		opts.Add(BoolVariable('macos', 'operating system', self.macos))
+		opts.Add(BoolVariable('visualc', 'Compilator', self.windows))
 
 		# display options
 		opts.Add('SHCCCOMSTR', 'display option', '$SHCCCOM')
@@ -405,10 +432,10 @@ class SConsProject:
 		Some options are used to modify the project (common to the whole compilation).
 		'''
 		subpath = os.path.join(self.hostname, '-'.join([self.compiler.name, self.env['CCVERSION']]), self.env['mode'])
-		self.dir_output_build  = os.path.join(self.env['BUILDDIR'], self.dir_build_name, subpath)
-		install_dir = os.path.join(self.env['DISTDIR'], self.dir_output_name, subpath)
+		self.dir_output_build  = os.path.join(self.env['BUILDPATH'], self.env['BUILDDIRNAME'], subpath)
+		install_dir = os.path.join(self.env['DISTDIR'], self.env['DISTDIRNAME'], subpath)
 		if self.env['install']:
-			install_dir = self.env['INSTALLDIR']
+			install_dir = self.env['INSTALLPATH']
 		self.dir_output        = install_dir
 		self.dir_output_bin    = os.path.join(install_dir, 'bin')
 		self.dir_output_lib    = os.path.join(install_dir, 'lib')

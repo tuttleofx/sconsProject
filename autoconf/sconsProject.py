@@ -25,7 +25,7 @@ class SConsProjectChecker(BaseLibChecker):
         env.AppendUnique( CCFLAGS = project.CC['base'] )
         env.AppendUnique( LINKFLAGS = project.CC['linkbase'] )
         
-        if env['WINDOWS']:
+        if windows:
             env.AppendUnique( CPPDEFINES = 'WIN' )
             env.AppendUnique( CPPDEFINES = 'WINDOWS' )
             env.AppendUnique( CPPDEFINES = '_WINDOWS' )

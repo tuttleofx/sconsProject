@@ -51,6 +51,7 @@ CC['linkbase']  = []
 def version( bin = 'cl' ):
 	import subprocess
 	try:
+		# todo
 		return 'unknown' #subprocess.Popen( [bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
 	except:
 		return 'unknown'
