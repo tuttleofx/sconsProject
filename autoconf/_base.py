@@ -67,10 +67,12 @@ class BaseLibChecker(object):
 
 		if macos:
 			if self.enabled(env,'fwkdir_'+self.name):
-				fwkdirs = asList(env['fwkdir_'+self.name])
-				fwkFlags = ['-F'+f for f in fwkdirs]
-				env.Append( LINKFLAGS=fwkFlags )
-				env.Append( CCFLAGS=fwkFlags )
+				var = env['fwkdir_'+self.name]
+				if isinstance(var, str) or isinstance(var, list):
+					fwkdirs = asList(var)
+					fwkFlags = ['-F'+f for f in fwkdirs]
+					env.Append( LINKFLAGS=fwkFlags )
+					env.Append( CCFLAGS=fwkFlags )
 
 		return True
 
