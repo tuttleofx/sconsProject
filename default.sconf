@@ -1,0 +1,4 @@
+
+import os
+join = os.path.join
+
