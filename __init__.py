@@ -123,6 +123,7 @@ class SConsProject:
 			sconf.append( 'windows-'+str(self.bits) )
 		sconf.append( self.hostname )
 		sconf.append( self.user )
+		sconf.append( 'finalize' )
 
 		sconf_sconsProject = ['display', 'default']
 
