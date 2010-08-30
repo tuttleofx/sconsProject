@@ -1,4 +1,5 @@
 from _external import *
+from pthread import *
 
 class BoostChecker(HeaderChecker):
     '''
@@ -37,5 +38,8 @@ class BoostChecker(HeaderChecker):
         return True
 
 #boost = BoostChecker()
-boost = HeaderChecker( 'boost',['boost/static_assert.hpp'], 'c++' )
+boost = HeaderChecker( 'boost',
+                       ['boost/static_assert.hpp'],
+                       'c++',
+                       dependencies = [pthread])
 

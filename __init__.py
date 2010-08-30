@@ -106,9 +106,8 @@ class SConsProject:
 			self.bits = 32
 
 		sconf = ['display',
-				 'default',
-				 'local',
-				 'user']
+		         'default',
+		         'local' ]
 		if self.unix:
 			sconf.append( 'unix' )
 			sconf.append( 'unix-'+str(self.bits) )
@@ -122,6 +121,7 @@ class SConsProject:
 			sconf.append( 'windows' )
 			sconf.append( 'windows-'+str(self.bits) )
 		sconf.append( self.hostname )
+		sconf.append( 'user' )
 		sconf.append( self.user )
 		sconf.append( 'finalize' )
 
