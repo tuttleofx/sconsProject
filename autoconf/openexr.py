@@ -1,8 +1,11 @@
 from _external import *
 
 openexr = LibWithHeaderChecker(
-            ['IlmImf', 'Half', 'IlmThread'], 'OpenEXR/ImfInputFile.h', 'c++',
+            ['IlmImf', 'Half', 'IlmThread'],
+	    'OpenEXR/ImfInputFile.h',
+	    'c++',
             name='openexr',
-            call='Imf::InputFile("test.exr");')
+            call='Imf::InputFile("test.exr");'
+	    )
 
 

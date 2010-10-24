@@ -30,7 +30,7 @@ class SConsProjectChecker(BaseLibChecker):
             env.AppendUnique( CPPDEFINES = 'WINDOWS' )
             env.AppendUnique( CPPDEFINES = '_WINDOWS' )
             env.AppendUnique( CPPDEFINES = '__WINDOWS__' )
-            env.AppendUnique( CPPDEFINES = 'WIN'+str(env['OSBITS']) )
+            env.AppendUnique( CPPDEFINES = 'WIN'+str(env['osbits']) )
         else:
             env.AppendUnique( CPPDEFINES = 'UNIX' )
             env.AppendUnique( CPPDEFINES = '__UNIX__' )

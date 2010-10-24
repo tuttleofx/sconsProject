@@ -102,8 +102,11 @@ class SConsProject:
 				self.bits = 64
 			else:
 				self.bits = 32
-		elif windows:
-			self.bits = 32
+		elif self.windows:
+			if 'PROGRAMFILES(X86)' not in os.environ:
+				self.bits = 32
+			else:
+				self.bits = 64
 
 		sconf = ['display',
 		         'default',
@@ -339,16 +342,19 @@ class SConsProject:
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
 		opts.Add(BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
-		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True))
+		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
-		opts.Add(PathVariable('ENVINC', 'Additional include path (at compilation)', '', PathVariable.PathAccept))
+		opts.Add(PathVariable('ENVINC', 'Additional include path (at compilation)', '' if not self.windows else os.environ.get('INCLUDE', ''), PathVariable.PathAccept))
 		opts.Add(PathVariable('ENVPATH', 'Additional bin path (at compilation)', '', PathVariable.PathAccept))
-		opts.Add(PathVariable('ENVLIBPATH', 'Additional librairie path (at compilation)', '', PathVariable.PathAccept))
-
+		opts.Add(PathVariable('ENVLIBPATH', 'Additional librairie path (at compilation)', '' if not self.windows else os.environ.get('LIB', ''), PathVariable.PathAccept))
+		
+		if self.windows:
+			opts.Add(PathVariable('PROGRAMFILES', 'Program Files directory', os.environ.get('PROGRAMFILES', ''), PathVariable.PathAccept))
+		
 		opts.Add('CPPPATH', 'Additional preprocessor paths', [])
 		opts.Add('CPPDEFINES', 'Additional preprocessor defines', [])
 		opts.Add('LIBPATH', 'Additional library paths', [])

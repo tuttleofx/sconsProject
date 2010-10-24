@@ -38,8 +38,13 @@ class BoostChecker(HeaderChecker):
         return True
 
 #boost = BoostChecker()
+
+dependencies = []
+if not windows:
+	dependencies.append( pthread )
+
 boost = HeaderChecker( 'boost',
                        ['boost/static_assert.hpp'],
                        'c++',
-                       dependencies = [pthread])
+                       dependencies = dependencies)
 
