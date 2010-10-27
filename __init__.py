@@ -906,10 +906,10 @@ class SConsProject:
 		'''List of subdirectories.'''
 		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
 
-	def unique(self, sourcesList):
+	def unique(self, seq):
 		'''Removes duplicates. Element order preserved.'''
-		unique_trick = [uniq for uniq in sourcesList if uniq not in locals()['_[1]']]
-		return unique_trick
+		seen = set()
+		return [x for x in seq if x not in seen and not seen.add(x)]
 
 	def scanFilesInDir(self, directory, accept, reject):
 		'''
