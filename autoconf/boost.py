@@ -46,5 +46,5 @@ if not windows:
 boost = HeaderChecker( 'boost',
                        ['boost/static_assert.hpp'],
                        'c++',
-                       dependencies = dependencies)
+                       dependencies = dependencies )
 
