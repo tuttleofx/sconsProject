@@ -22,10 +22,10 @@ CC['nooptimize'] =['/Od']
 # /GR            Enables run-time type information (RTTI)
 # /GX            Enables synchronous exception handling
 
-CC['warning1']  = '/W1'
-CC['warning2']  = '/W2'
-CC['warning3']  = '/W3'
-CC['warning4']  = '/W4'
+CC['warning1']  = ['/W1']
+CC['warning2']  = ['/W2']
+CC['warning3']  = ['/W3']
+CC['warning4']  = ['/W4']
 CC['nowarning'] = ['/w', '/W0']
 
 CC['sharedNoUndefined'] = ['']
