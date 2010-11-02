@@ -113,9 +113,10 @@ class BaseLibChecker(object):
 
 	def privateCheckFrameworkWithHeader( self, conf, framework, header, language, call=False ):
 		p_framework = asList(framework)
-		fwk = reduce(add, [ ['-framework',f] for f in p_framework], [])
-		conf.env.Append( LINKFLAGS = fwk )
+		#fwk = reduce(add, [ ['-framework',f] for f in p_framework], [])
+		#conf.env.Append( LINKFLAGS = fwk )
 		#conf.env.Append( CCFLAGS = fwk ) # ?
+		conf.env.Append( FRAMEWORKS = p_framework )
 		self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
 		return True
 
@@ -132,7 +133,8 @@ class BaseLibChecker(object):
 
 	def privateCheckFramework( self, conf, framework, language, call=False ):
 		p_framework = asList(framework)
-		conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
+		#conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
+		conf.env.Append( FRAMEWORKS = p_framework )
 		self.privateCheckLib( conf, libs=[] )
 		return True
 
