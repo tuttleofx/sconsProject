@@ -904,10 +904,10 @@ class SConsProject:
 
 	def recursiveDirs(self, root):
 		'''List of subdirectories.'''
-        if sys.version_info < (2, 6):
-            return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)])
-        else:
-            return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
+		if sys.version_info < (2, 6):
+			return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)])
+		else:
+			return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
 
 	def unique(self, seq):
 		'''Removes duplicates. Element order preserved.'''
