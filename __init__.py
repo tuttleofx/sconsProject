@@ -904,7 +904,7 @@ class SConsProject:
 
 	def recursiveDirs(self, root):
 		'''List of subdirectories.'''
-		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
+		return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)]) #, followlinks=True)])
 
 	def unique(self, seq):
 		'''Removes duplicates. Element order preserved.'''
