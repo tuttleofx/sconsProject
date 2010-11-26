@@ -344,6 +344,7 @@ class SConsProject:
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
 		opts.Add('default', 'Default objects to build', 'all')
+		opts.Add('aliases', 'A dict of custom aliases.', {})
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
@@ -516,6 +517,10 @@ class SConsProject:
 
 		# by default compiles the target 'all'
 		Default( self.env['default'].split() )
+
+		# user can add some aliases
+		for k, v in self.env['aliases'].iteritems():
+			self.env.Alias(k, v)
 
 		doxygen = self.env.Doxygen(self.inTopDir('doc/config/Doxyfile'))
 
