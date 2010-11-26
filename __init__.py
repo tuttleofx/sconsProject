@@ -333,7 +333,7 @@ class SConsProject:
 			return '%s%s%s  %s\n%s(default=%s, actual=%s)\n\n' % (self.env['color_title'], opt, self.env['color_clear'], multilineHelp, alignment, default, actual)
 		opts.FormatVariableHelpText = help_format
 
-		opts.Add(EnumVariable('mode', 'Compilation mode', 'debug', allowed_values=('debug', 'release', 'production')))
+		opts.Add(EnumVariable('mode', 'Compilation mode', 'production', allowed_values=('debug', 'release', 'production')))
 		opts.Add(BoolVariable('install', 'Install', False))
 		opts.Add(BoolVariable('profile', 'Build with profiling support', False))
 		opts.Add(BoolVariable('cover', 'Build with cover support', False))
@@ -343,6 +343,7 @@ class SConsProject:
 		opts.Add(BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
+		opts.Add('default', 'Default objects to build', 'all')
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
@@ -514,7 +515,7 @@ class SConsProject:
 		'''
 
 		# by default compiles the target 'all'
-		Default('all')
+		Default( self.env['default'].split() )
 
 		doxygen = self.env.Doxygen(self.inTopDir('doc/config/Doxyfile'))
 
