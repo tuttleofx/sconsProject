@@ -515,13 +515,6 @@ class SConsProject:
 		The last function call at the end by the SConstruct.
 		'''
 
-		# by default compiles the target 'all'
-		Default( self.env['default'].split() )
-
-		# user can add some aliases
-		for k, v in self.env['aliases'].iteritems():
-			self.env.Alias(k, v)
-
 		doxygen = self.env.Doxygen(self.inTopDir('doc/config/Doxyfile'))
 
 		self.env.Alias('doc', doxygen)
@@ -577,6 +570,13 @@ class SConsProject:
 			 )
 
 		Help(self.opts_help.GenerateHelpText(self.env))
+
+		# user can add some aliases
+		for k, v in self.env['aliases'].iteritems():
+			self.env.Alias(k, v)
+
+		# by default compiles the target 'all'
+		Default( self.env['default'].split() )
 
 		# register function to display compilation status at the end
 		# to avoid going through if SCons raises an exception (error in a SConscript)
