@@ -1,5 +1,5 @@
 from _external import *
-from clapack import *
+from lapack import *
 
-sba = LibWithHeaderChecker('sba', 'sba.h', 'c', dependencies=[clapack])
+sba = LibWithHeaderChecker('sba', 'sba.h', 'c', dependencies=[lapack])
 

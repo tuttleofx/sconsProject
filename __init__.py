@@ -800,7 +800,7 @@ class SConsProject:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
 
 		if not sourcesFiles:
-			raise LogicError( "No source files for the target: " + target )
+			raise RuntimeError( "No source files for the target: " + target )
 
 		localEnv = None
 		if env:
@@ -859,7 +859,7 @@ class SConsProject:
 			sourcesFiles += self.scanFiles( dirs, accept, reject )
 
 		if not sourcesFiles:
-			raise LogicError( "No source files for the target: " + target )
+			raise RuntimeError( "No source files for the target: " + target )
 		
 		localEnv = None
 		localLibraries = libraries
