@@ -137,8 +137,8 @@ class SConsProject:
 						   ]
 		self.sconf_files = [ f for f in self.sconf_files if os.path.exists(f) ]
 
-		if self.windows:
-			self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
+		#if self.windows:
+		self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
 
 		# scons optimizations...
 		self.env.SourceCode('.', None)
@@ -344,7 +344,7 @@ class SConsProject:
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
 		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
 		opts.Add('default', 'Default objects to build', 'all')
-		opts.Add('aliases', 'A dict of custom aliases.', {})
+		opts.Add('aliases', 'A list of custom aliases.', [])
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
@@ -572,12 +572,15 @@ class SConsProject:
 		Help(self.opts_help.GenerateHelpText(self.env))
 
 		# user can add some aliases
-		for k, v in self.env['aliases'].iteritems():
-			self.env.Alias(k, v)
+		for v in self.env['aliases']:
+			self.env.Alias(v[0], v[1:])
 
 		# by default compiles the target 'all'
-		Default( self.env['default'].split() )
-
+		if( self.env['default'] is str ):
+			Default( self.env['default'].split() )
+		else:
+			Default( self.env['default'] )
+		
 		# register function to display compilation status at the end
 		# to avoid going through if SCons raises an exception (error in a SConscript)
 		atexit.register(utils.display_build_status)
