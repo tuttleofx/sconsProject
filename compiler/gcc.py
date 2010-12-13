@@ -12,6 +12,17 @@ cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
 
+def version( bin = 'gcc' ):
+	import subprocess
+	try:
+		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+	except:
+		return 'unknown'
+
+gccVersionStr = version()
+gccVersion = [0,0,0]
+if gccVersionStr != 'unknown':
+	gccVersion = [int(i) for i in gccVersionStr.split('.')]
 
 CC = {}
 CC['version']   = '-dumpversion'
@@ -40,7 +51,10 @@ CC['nooptimize'] =['-O0']
 
 
 CC['warning1']  = ['-Wall']
-CC['warning2']  = ['-Wall','-Werror=return-type']
+CC['warning2']  = ['-Wall']
+if gccVersion[0]>=4 and gccVersion[1]>1:
+	CC['warning2'].append('-Werror=return-type')
+
 CC['warning3']  = CC['warning2']+['-Winline']
 CC['warning4']  = CC['warning3']
 CC['nowarning'] = ['/w']
@@ -83,12 +97,4 @@ CC['release']   = CC['optimize']
 # base : a toujours mettre
 CC['base']      = []
 CC['linkbase']  = []
-
-
-def version( bin = 'gcc' ):
-	import subprocess
-	try:
-		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
-	except:
-		return 'unknown'
 
