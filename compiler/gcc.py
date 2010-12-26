@@ -51,13 +51,13 @@ CC['nooptimize'] =['-O0']
 
 
 CC['warning1']  = ['-Wall']
-CC['warning2']  = ['-Wall']
+CC['warning2']  = ['-Wall'] 
 if gccVersion[0]>=4 and gccVersion[1]>1:
 	CC['warning2'].append('-Werror=return-type')
 
-CC['warning3']  = CC['warning2']+['-Winline']
-CC['warning4']  = CC['warning3']
-CC['nowarning'] = ['/w']
+CC['warning3']  = CC['warning2']+['-Werror=switch']
+CC['warning4']  = CC['warning3']+['-Winline']
+CC['nowarning'] = ['-w']
 
 
 if macos:
