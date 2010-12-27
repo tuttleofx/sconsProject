@@ -12,9 +12,9 @@ class InternalLibChecker(BaseLibChecker):
 			self.name = name
 		else:
 			self.name = lib
-		self.includes= includes # includes directories
+		self.includes= list(includes) # includes directories
 		self.envFlags = envFlags # library specific flags
-		self.dependencies = dependencies # all libraries needed by this library (need to be propagated to all targets using this library)
+		self.dependencies = list(dependencies) # all libraries needed by this library (need to be propagated to all targets using this library)
 		self.sconsNode = sconsNode # a reference to the scons node object, we can use to use Depends, Alias, etc.
 
 	def enabled(self,env,option=None):

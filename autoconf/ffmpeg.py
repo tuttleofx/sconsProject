@@ -9,6 +9,6 @@ ffmpeg = LibWithHeaderChecker( ['avutil',
                                'libavformat/avformat.h',
                                'c',
                                name='ffmpeg',
-                               defines ='__STDC_CONSTANT_MACROS',
+                               defines=['__STDC_CONSTANT_MACROS'],
                                dependencies=[z]
                               )
