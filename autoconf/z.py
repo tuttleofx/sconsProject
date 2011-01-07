@@ -1,3 +1,6 @@
 from _external import *
 
-z = LibChecker('z')
+if windows:
+	z = LibChecker('zlib')
+else:
+	z = LibChecker('z')
