@@ -279,9 +279,11 @@ class SConsProject:
 			return self.dir_output_test
 		return [ os.path.join( self.inOutputTest(), d ) for d in dirs ]
 
-	def getName(self):
-		'''Returns the current directory, often used as name.'''
-		return os.path.basename(os.getcwd())
+	def getName(self, n=1):
+		'''Create a name using the current directory. "n" is the number of parents to build the name.'''
+		if n == 0:
+			return '_'.join( os.getcwd().split(os.sep) )
+		return '_'.join( os.getcwd().split(os.sep)[-n:] )
 
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
