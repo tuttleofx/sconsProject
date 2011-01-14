@@ -10,7 +10,7 @@ CC = {}
 CC['define']   = '/D'
 CC['exceptionsEnabled'] = '/EHsc' #'/GX'
 
-CC['optimize']   =['/O2','/Ox','/GA','/GL'] # 
+CC['optimize']   =['/O2','/Ox','/GA','/GL']
 CC['nooptimize'] =['/Od']
 # /O2            Creates fast code
 # /Ox            Uses maximum optimization (/Ob2gity /Gs)
@@ -43,7 +43,7 @@ CC['debug']   = ['/DEBUG','/Zi'] + CC['nooptimize']
 # desapprouvee : '/Yd'
 CC['release']   = CC['optimize']
 
-# base : a toujours mettre
+# base : recommended in all cases
 CC['base']      = [CC['exceptionsEnabled']]
 CC['linkbase']  = []
 

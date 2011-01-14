@@ -14,8 +14,8 @@ class LibWithHeaderChecker(BaseLibChecker):
 				self.name = libs
 		else:
 			self.name = name
-		self.dependencies = dependencies
-		self.defines = defines
+		self.dependencies = list(dependencies)
+		self.defines = list(defines)
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
