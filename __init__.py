@@ -442,6 +442,7 @@ class SConsProject:
 		Some options are used to modify the project (common to the whole compilation).
 		'''
 		subpath = os.path.join(self.hostname, '-'.join([self.compiler.name, self.env['CCVERSION']]), self.env['mode'])
+		self.bits = int(self.env['osbits'])
 		self.dir_output_build  = os.path.join(self.env['BUILDPATH'], self.env['BUILDDIRNAME'], subpath)
 		install_dir = os.path.join(self.env['DISTPATH'], self.env['DISTDIRNAME'], subpath)
 		if self.env['install']:
