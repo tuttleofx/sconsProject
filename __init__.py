@@ -138,7 +138,7 @@ class SConsProject:
 		self.sconf_files = [ f for f in self.sconf_files if os.path.exists(f) ]
 
 		#if self.windows:
-		self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
+		self.env['ENV']['PATH'] = os.environ['PATH'] # access to the compiler (if not in '/usr/bin')
 
 		# scons optimizations...
 		self.env.SourceCode('.', None)
