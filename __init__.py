@@ -352,9 +352,9 @@ class SConsProject:
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
-		opts.Add(PathVariable('ENVINC', 'Additional include path (at compilation)', '' if not self.windows else os.environ.get('INCLUDE', ''), PathVariable.PathAccept))
-		opts.Add(PathVariable('ENVPATH', 'Additional bin path (at compilation)', '', PathVariable.PathAccept))
-		opts.Add(PathVariable('ENVLIBPATH', 'Additional librairie path (at compilation)', '' if not self.windows else os.environ.get('LIB', ''), PathVariable.PathAccept))
+		opts.Add('ENVINC', 'Additional include path (at compilation)', [] if not self.windows else os.environ.get('INCLUDE', '').split(':'))
+		opts.Add('ENVPATH', 'Additional bin path (at compilation)', [])
+		opts.Add('ENVLIBPATH', 'Additional librairie path (at compilation)', [] if not self.windows else os.environ.get('LIB', '').split(':'))
 		
 		if self.windows:
 			opts.Add(PathVariable('PROGRAMFILES', 'Program Files directory', os.environ.get('PROGRAMFILES', ''), PathVariable.PathAccept))
