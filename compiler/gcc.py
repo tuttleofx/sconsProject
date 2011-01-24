@@ -30,7 +30,7 @@ CC['version']   = '-dumpversion'
 CC['define']   = '-D'
 
 
-CC['optimize'] = ['-O3']#,
+CC['optimize'] = ['-O2']#,
                   #'-finline-limit=700',
                   #'--param large-function-growth=1000']
 # '--param inline-unit-growth=100','--param large-function-growth=1000'
@@ -55,7 +55,10 @@ CC['warning2']  = ['-Wall']
 if gccVersion[0]>=4 and gccVersion[1]>1:
 	CC['warning2'].append('-Werror=return-type')
 
-CC['warning3']  = CC['warning2']+['-Werror=switch']
+CC['warning3']  = CC['warning2']
+if gccVersion[0]>=4 and gccVersion[1]>1:
+	CC['warning3'].append('-Werror=switch')
+
 CC['warning4']  = CC['warning3']+['-Winline']
 CC['nowarning'] = ['-w']
 
