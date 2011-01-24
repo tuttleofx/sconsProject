@@ -12,11 +12,23 @@ from pthread import *
 from ltdl import *
 
 # imagemagick C API
-imagemagick = LibWithHeaderChecker(
-        ['MagickCore'],
-        ['magick/MagickCore.h'],
-        'c',
-        name='imagemagick',
-        dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl]
+
+if windows:
+	imagemagick = LibWithHeaderChecker(
+		['MagickCore'],
+		['magick/MagickCore.h'],
+		'c',
+		name='imagemagick',
+		#dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, ltdl]
         )
+else:
+	imagemagick = LibWithHeaderChecker(
+		['MagickCore'],
+		['magick/MagickCore.h'],
+		'c',
+		name='imagemagick',
+		dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl]
+        )
+
+
 

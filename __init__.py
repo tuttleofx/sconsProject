@@ -138,7 +138,7 @@ class SConsProject:
 		self.sconf_files = [ f for f in self.sconf_files if os.path.exists(f) ]
 
 		#if self.windows:
-		self.env['ENV']['PATH'] = os.environ['PATH'] # to have access to cl and link...
+		self.env['ENV']['PATH'] = os.environ['PATH'] # access to the compiler (if not in '/usr/bin')
 
 		# scons optimizations...
 		self.env.SourceCode('.', None)
@@ -279,9 +279,11 @@ class SConsProject:
 			return self.dir_output_test
 		return [ os.path.join( self.inOutputTest(), d ) for d in dirs ]
 
-	def getName(self):
-		'''Returns the current directory, often used as name.'''
-		return os.path.basename(os.getcwd())
+	def getName(self, n=1):
+		'''Create a name using the current directory. "n" is the number of parents to build the name.'''
+		if n == 0:
+			return '_'.join( os.getcwd().split(os.sep) )
+		return '_'.join( os.getcwd().split(os.sep)[-n:] )
 
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
@@ -350,9 +352,9 @@ class SConsProject:
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
-		opts.Add(PathVariable('ENVINC', 'Additional include path (at compilation)', '' if not self.windows else os.environ.get('INCLUDE', ''), PathVariable.PathAccept))
-		opts.Add(PathVariable('ENVPATH', 'Additional bin path (at compilation)', '', PathVariable.PathAccept))
-		opts.Add(PathVariable('ENVLIBPATH', 'Additional librairie path (at compilation)', '' if not self.windows else os.environ.get('LIB', ''), PathVariable.PathAccept))
+		opts.Add('ENVINC', 'Additional include path (at compilation)', [] if not self.windows else os.environ.get('INCLUDE', '').split(':'))
+		opts.Add('ENVPATH', 'Additional bin path (at compilation)', [])
+		opts.Add('ENVLIBPATH', 'Additional librairie path (at compilation)', [] if not self.windows else os.environ.get('LIB', '').split(':'))
 		
 		if self.windows:
 			opts.Add(PathVariable('PROGRAMFILES', 'Program Files directory', os.environ.get('PROGRAMFILES', ''), PathVariable.PathAccept))
@@ -440,6 +442,7 @@ class SConsProject:
 		Some options are used to modify the project (common to the whole compilation).
 		'''
 		subpath = os.path.join(self.hostname, '-'.join([self.compiler.name, self.env['CCVERSION']]), self.env['mode'])
+		self.bits = int(self.env['osbits'])
 		self.dir_output_build  = os.path.join(self.env['BUILDPATH'], self.env['BUILDDIRNAME'], subpath)
 		install_dir = os.path.join(self.env['DISTPATH'], self.env['DISTDIRNAME'], subpath)
 		if self.env['install']:
