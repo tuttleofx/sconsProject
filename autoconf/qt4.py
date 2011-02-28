@@ -14,10 +14,11 @@ class Qt4Checker(LibWithHeaderChecker):
     TODO
     '''
 
-    def __init__(self, modules = [
-                'QtCore',
-                'QtGui',
-                'QtOpenGL',
+    def __init__( self,
+                  modules = [
+                      'QtCore',
+                      'QtGui',
+                      'QtOpenGL',
 #                'QtAssistant',
 #                'QtScript',
 #                'QtDBus',
@@ -31,10 +32,14 @@ class Qt4Checker(LibWithHeaderChecker):
 #                'QtDesignerComponents',
 #                'QtWebKit'
 #                'Qt3Support',
-                ], uiFiles = [], useLocalIncludes = True ):
+                ],
+                  uiFiles = [],
+                  defines = ['QT_NO_KEYWORDS'],
+                  useLocalIncludes = True ):
         self.name  = 'qt4'
         self.libs = modules
         self.uiFiles = uiFiles
+        self.defines = defines
         self.useLocalIncludes = useLocalIncludes
         
     def setModules(self, modules):
@@ -44,6 +49,7 @@ class Qt4Checker(LibWithHeaderChecker):
         self.uiFiles = uiFiles
         
     def check(self, project, conf):
+        conf.env.AppendUnique( CPPDEFINES = self.defines )
         conf.env.EnableQt4Modules( self.libs, debug=False )
         result = True
         for mod in self.libs:
