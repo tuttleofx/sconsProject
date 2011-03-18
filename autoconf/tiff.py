@@ -1,4 +1,4 @@
 from _external import *
 
-tiff = LibWithHeaderChecker('tiff','tiff.h','c',call='TIFFGetVersion();')
+tiff = LibWithHeaderChecker('tiff',['tiff.h', 'tiffio.h'],'c',call='TIFFGetVersion();')
 
