@@ -285,6 +285,16 @@ class SConsProject:
 			return '_'.join( os.getcwd().split(os.sep) )
 		return '_'.join( os.getcwd().split(os.sep)[-n:] )
 
+	def getDirs(self, n=1):
+		'''Create a list of upper directories. "n" is the number of parents.'''
+		alldirs = os.getcwd().split(os.sep)
+		if isinstance( n, list ):
+			return [alldirs[i] for i in n]
+		else:
+			if n == 0:
+				return alldirs
+			return alldirs[-n:]
+
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
 		return not GetOption('clean') and not GetOption('help')

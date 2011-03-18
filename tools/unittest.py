@@ -24,13 +24,23 @@ def builder_unit_test(target, source, env):
 
 
 def UnitTest(env, source, **kwargs):
-	if 'target' in kwargs:
-		kwargs['target'] = 'unittest-'+kwargs['target']
-	test = env.Program(source=source, **kwargs)
+	target = []
+	if 'target' not in kwargs:
+		raise RuntimeError( 'No target for unittest.' )
+	
+	if isinstance( kwargs['target'], list ):
+		target = kwargs['target']
+	elif isinstance( kwargs['target'], str ):
+		target = [kwargs['target']]
+	target.insert( 0, 'unittest' )
+	
+	test = env.Program(source=source, target='-'.join( target ) )
+	
 	unittest = env.Test( test[0].abspath+'.unittest_passed', test )
-	if 'target' in kwargs:
-		env.Alias(kwargs['target'], unittest)
-	env.Alias('unittest', unittest)
+	
+	for i in range(1,len(target)+1):
+		print '-'.join(target[0:i])
+		env.Alias('-'.join(target[0:i]), unittest)
 	return test
 
 
