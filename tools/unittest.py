@@ -39,7 +39,7 @@ def UnitTest(env, source, **kwargs):
 	unittest = env.Test( test[0].abspath+'.unittest_passed', test )
 	
 	for i in range(1,len(target)+1):
-		print '-'.join(target[0:i])
+		#print '-'.join(target[0:i])
 		env.Alias('-'.join(target[0:i]), unittest)
 	return test
 
