@@ -792,16 +792,16 @@ class SConsProject:
 			else:
 				dst[k] = v
 
-	def ObjectLibrary( self, name, libraries=[], includes=[], envFlags={} ):
+	def ObjectLibrary( self, target, libraries=[], includes=[], envFlags={} ):
 		'''
 		To create an ObjectLibrary and expose it in the project to be easily used by other targets.
 		This is not a library just a configuration object with CPPDEFINES, CCFLAGS, LIBS, etc.
 		'''
 		# expose this library
-		dstLibChecker = autoconf._internal.InternalLibChecker( name=name, includes=includes, envFlags=envFlags, dependencies=libraries )
+		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.getRealAbsoluteCwd(includes)+includes, envFlags=envFlags, dependencies=libraries )
 
 		# add the new declared library to the list of libs checker in self.libs
-		setattr(self.libs, name, dstLibChecker)
+		setattr(self.libs, target, dstLibChecker)
 
 		return dstLibChecker
 
@@ -923,6 +923,49 @@ class SConsProject:
 
 		return dstLibInstall
 
+	def Program( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''
+		To create a program and expose it in the project to be simply used by other targets.
+		'''
+		sourcesFiles = []
+		sourcesFiles += sources
+		if dirs:
+			sourcesFiles += self.scanFiles( dirs, accept, reject )
+
+		if not sourcesFiles:
+			raise RuntimeError( "No source files for the target: " + target )
+		
+		localEnv = None
+		localLibraries = libraries
+		if env:
+			localEnv = env
+			self.appendLibsToEnv(localEnv, localLibraries)
+			if 'SconsProjectLibraries' in localEnv:
+				localLibraries += localEnv['SconsProjectLibraries']
+		else:
+			# if no environment we create a new one
+			localEnv = self.createEnv( localLibraries, name=target )
+
+		# apply arguments to env
+		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
+		if localEnvFlags:
+			localEnv.AppendUnique( **localEnvFlags )
+		if replaceLocalEnvFlags:
+			localEnv.Replace( **replaceLocalEnvFlags )
+		if globalEnvFlags:
+			localEnv.AppendUnique( **globalEnvFlags )
+
+		# create the target
+		dst = localEnv.Program( target=target, source=sourcesFiles )
+
+		dstInstall = localEnv.Install( installDir if installDir else self.inOutputBin(), dst ) if install else dst
+		localEnv.Alias( target, dstInstall )
+		localEnv.Alias( 'all', target )
+
+		return dstInstall
+
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
@@ -962,15 +1005,18 @@ class SConsProject:
 		lsources = map(toLocalDirs, sources)
 		return self.unique(lsources)
 
-	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp']):
+	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], unique=True):
 		'''
 		Recursively search files in "dirs" that matches 'accepts' wildcards and don't contains "reject"
+		@param[in] unique Uniquify the list of files
 		'''
 		l_dirs = self.asList( dirs )
 		files = []
 		for d in l_dirs:
 			files += self.scanFilesInDir(d, accept, reject)
-		return files
+		if not unique:
+			return files
+		return self.unique(files)
 
 	def dirnames(self, files):
 		'''Returns the list of files dirname.'''
