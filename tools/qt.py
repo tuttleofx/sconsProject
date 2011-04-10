@@ -107,7 +107,7 @@ class _Automoc(object):
             debug = int(env.subst('$QT_DEBUG'))
         except ValueError:
             debug = 0
-        debug = 1
+        
         # some shortcuts used in the scanner
         splitext = SCons.Util.splitext
         objBuilder = getattr(env, self.objBuilderName)
@@ -219,11 +219,11 @@ def uicEmitter(target, source, env):
     #                             env.subst('$QT_MOCHPREFIX')+env.subst('$QT_UICIMPLPREFIX'),
     #                             env.subst('$QT_MOCHSUFFIX')#+env.subst('$QT_UICIMPLSUFFIX')
     #                             ))
-    if not isinstance( target[0], str ):
-        print 'target[0]', target[0].str_for_display()
-    if not isinstance( source[0], str ):
-        print 'source[0]', source[0].str_for_display()
-    print 'uicEmitter: ', target, '<--', source
+    #if not isinstance( target[0], str ):
+    #    print 'target[0]', target[0].str_for_display()
+    #if not isinstance( source[0], str ):
+    #    print 'source[0]', source[0].str_for_display()
+    #print 'uicEmitter: ', target, '<--', source
     return target, source
 
 def uicScannerFunc(node, env, path):
@@ -236,7 +236,7 @@ def uicScannerFunc(node, env, path):
         dep = env.FindFile(incFile,lookout)
         if dep:
             result.append(dep)
-    print 'uicScannerFunc: ', result
+    #print 'uicScannerFunc: ', result
     return result
 
 uicScanner = SCons.Scanner.Base(uicScannerFunc,
