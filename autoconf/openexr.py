@@ -1,11 +1,14 @@
 from _external import *
+from ilmbase import *
+from z import *
 
 openexr = LibWithHeaderChecker(
-		['IlmImf', 'Half', 'IlmThread'],
+		['IlmImf'],
 		'OpenEXR/ImfInputFile.h',
 		'c++',
 		name='openexr',
-		call='Imf::InputFile("test.exr");'
+		call='Imf::InputFile("test.exr");',
+		dependencies=[ilmbase,z],
 	    )
 
 
