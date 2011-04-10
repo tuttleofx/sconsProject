@@ -9,6 +9,7 @@ windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
 macos = sys.platform.lower().startswith("darwin")
 linux = not windows and not macos
 unix = not windows
+default_dir = '/usr' if unix else ''
 
 def asList(v):
 	'''Return v inside a list if not a list.'''
@@ -47,6 +48,8 @@ class BaseLibChecker(object):
 		opts.Add( self.name, 'To customize the libraries names if particular on your platform or compiled version.', self.libs )
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
+		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, default_dir )
+		return True
 
 	def configure(self, project, env):
 		'''

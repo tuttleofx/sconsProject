@@ -4,6 +4,8 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], defines=[] ):
 		self.libs = asList(libs)
+		#print 'name:', name
+		#print 'libs:', self.libs
 		self.header   = header
 		self.language = language
 		self.call = call
@@ -19,8 +21,8 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name,  None )
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name,     None )
+		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name, os.path.join('$dir_'+self.name, 'include') )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
 		return True
 
 	def check(self, project, conf):
@@ -45,8 +47,8 @@ class LibChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
-		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
+		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, os.path.join('$dir_'+self.name, 'include') )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
 		return True
 
 	def check(self, project, conf):
@@ -67,8 +69,8 @@ class HeaderChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, None )
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, None )
+		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, os.path.join('$dir_'+self.name, 'include') )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
 		return True
 
 	def postconfigure(self, project, env):
