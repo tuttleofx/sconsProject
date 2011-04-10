@@ -85,8 +85,13 @@ class SConsProject:
 	libs_help         = [] # temporary list of librairies already added to help
 	libs_error        = [] # list of libraries with autoconf error
 	allLibsChecked    = [] # temporary list of librairies already checked
-	env               = Environment(tools=['default', 'packaging', 'doxygen', 'unittest',
-									'qt4'], toolpath=[dir_sconsProject + "/tools"])
+	env               = Environment( tools=['default',
+                                                'packaging',
+                                                'doxygen',
+                                                'unittest',
+                                                'qt',
+                                                ],
+                                         toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
 	def __init__(self):
 		'''
@@ -589,7 +594,7 @@ class SConsProject:
 			self.env.Alias(v[0], v[1:])
 
 		# by default compiles the target 'all'
-		if( self.env['default'] is str ):
+		if isinstance(self.env['default'], str):
 			Default( self.env['default'].split() )
 		else:
 			Default( self.env['default'] )
@@ -849,6 +854,7 @@ class SConsProject:
 		
 		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
 		localEnv.Alias( target, dstLibInstall )
+		localEnv.Alias( 'all', target )
 
 		# expose this library
 		envFlags=externEnvFlags
@@ -905,6 +911,7 @@ class SConsProject:
 
 		dstLibInstall = localEnv.Install( installDir if installDir else self.inOutputLib(), dstLib ) if install else dstLib
 		localEnv.Alias( target, dstLibInstall )
+		localEnv.Alias( 'all', target )
 
 		# expose this library
 		envFlags=externEnvFlags
