@@ -9,7 +9,7 @@ windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
 macos = sys.platform.lower().startswith("darwin")
 linux = not windows and not macos
 unix = not windows
-default_dir = '/usr' if unix else ''
+default_dir = '/custom/user/path' if unix else ''
 
 def asList(v):
 	'''Return v inside a list if not a list.'''
