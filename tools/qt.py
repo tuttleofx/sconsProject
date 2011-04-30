@@ -182,27 +182,6 @@ class _Automoc(object):
 AutomocShared = _Automoc('SharedObject')
 AutomocStatic = _Automoc('StaticObject')
 
-#def _detect(env):
-#    """Not really safe, but fast method to detect the QT library"""
-#    QTDIR = None
-#    if not QTDIR:
-#        QTDIR = env.get('QTDIR',None)
-#    if not QTDIR:
-#        QTDIR = os.environ.get('QTDIR',None)
-#    if not QTDIR:
-#        moc = env.WhereIs('moc')
-#        if moc:
-#            QTDIR = os.path.dirname(os.path.dirname(moc))
-#            SCons.Warnings.warn(
-#                QtdirNotFound,
-#                "Could not detect qt, using moc executable as a hint (QTDIR=%s)" % QTDIR)
-#        else:
-#            QTDIR = None
-#            SCons.Warnings.warn(
-#                QtdirNotFound,
-#                "Could not detect qt, using empty QTDIR")
-#    return QTDIR
-
 def uicEmitter(target, source, env):
     adjustixes = SCons.Util.adjustixes
     bs = SCons.Util.splitext(str(source[0].name))[0]
@@ -210,20 +189,38 @@ def uicEmitter(target, source, env):
     # first target (header) is automatically added by builder
     #if len(target) < 2:
     #    # second target is implementation
-    #    target.append(adjustixes(bs,
+    #    target.append(
+    #        #env.File(
+    #            adjustixes(
+    #                bs,
     #                             env.subst('$QT_UICIMPLPREFIX'),
-    #                             env.subst('$QT_UICIMPLSUFFIX')))
+    #                env.subst('$QT_UICIMPLSUFFIX')
+    #            )
+    #        #)
+    #    )
     #if len(target) < 3:
     #    # third target is moc file
-    #    target.append(adjustixes(bs,
+    #    target.append(
+    #        #env.File(
+    #            adjustixes(
+    #                bs,
     #                             env.subst('$QT_MOCHPREFIX')+env.subst('$QT_UICIMPLPREFIX'),
     #                             env.subst('$QT_MOCHSUFFIX')#+env.subst('$QT_UICIMPLSUFFIX')
-    #                             ))
-    #if not isinstance( target[0], str ):
-    #    print 'target[0]', target[0].str_for_display()
-    #if not isinstance( source[0], str ):
-    #    print 'source[0]', source[0].str_for_display()
-    #print 'uicEmitter: ', target, '<--', source
+    #            )
+    #        #)
+    #    )
+    #print '-- uicEmitter --'
+    #for i in range(len(target)):
+    #    if not isinstance( target[i], str ):
+    #        print 'target['+str(i)+']', target[i].str_for_display()
+    #    else:
+    #        print 'target['+str(i)+']', target[i]
+    #for i in range(len(source)):
+    #    if not isinstance( source[i], str ):
+    #        print 'source['+str(i)+']', source[i].str_for_display()
+    #    else:
+    #        print 'source['+str(i)+']', source[i]
+    #print '-- uicEmitter --'
     return target, source
 
 def uicScannerFunc(node, env, path):
@@ -251,14 +248,7 @@ def generate(env):
     Action = SCons.Action.Action
     Builder = SCons.Builder.Builder
 
-    env.SetDefault(#QTDIR  = _detect(env),
-                   #QT_BINPATH = os.path.join('$QTDIR', 'bin'),
-                   #QT_CPPPATH = os.path.join('$QTDIR', 'include'),
-                   #QT_LIBPATH = os.path.join('$QTDIR', 'lib'),
-                   #QT_MOC = os.path.join('$QT_BINPATH','moc'),
-                   #QT_UIC = os.path.join('$QT_BINPATH','uic'),
-                   #QT_LIB = 'qt', # may be set to qt-mt
-
+    env.SetDefault(
                    QT_AUTOSCAN = 1, # scan for moc'able sources
 
                    # Some QT specific flags. I don't expect someone wants to
@@ -340,10 +330,5 @@ def enableQtEmmitters(self):
 
 
 def exists(env):
-    return True #_detect(env)
+    return True
 
-# Local Variables:
-# tab-width:4
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=4 shiftwidth=4:
