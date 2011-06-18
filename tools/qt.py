@@ -60,7 +60,7 @@ if SCons.Util.case_sensitive_suffixes('.h', '.H'):
     header_extensions.append('.H')
 # TODO: The following two lines will work when integrated back to SCons
 # TODO: Meanwhile the third line will do the work
-#cplusplus = __import__('c++', globals(), locals(), [])
+#cplusplus = __import__('SCons.Tool.c++', globals(), locals(), [])
 #cxx_suffixes = cplusplus.CXXSuffixes
 cxx_suffixes = [".c", ".cxx", ".cpp", ".cc"]
 
@@ -182,48 +182,45 @@ class _Automoc(object):
 AutomocShared = _Automoc('SharedObject')
 AutomocStatic = _Automoc('StaticObject')
 
-#def _detect(env):
-#    """Not really safe, but fast method to detect the QT library"""
-#    QTDIR = None
-#    if not QTDIR:
-#        QTDIR = env.get('QTDIR',None)
-#    if not QTDIR:
-#        QTDIR = os.environ.get('QTDIR',None)
-#    if not QTDIR:
-#        moc = env.WhereIs('moc')
-#        if moc:
-#            QTDIR = os.path.dirname(os.path.dirname(moc))
-#            SCons.Warnings.warn(
-#                QtdirNotFound,
-#                "Could not detect qt, using moc executable as a hint (QTDIR=%s)" % QTDIR)
-#        else:
-#            QTDIR = None
-#            SCons.Warnings.warn(
-#                QtdirNotFound,
-#                "Could not detect qt, using empty QTDIR")
-#    return QTDIR
-
 def uicEmitter(target, source, env):
     adjustixes = SCons.Util.adjustixes
     bs = SCons.Util.splitext(str(source[0].name))[0]
     bs = os.path.join(str(target[0].get_dir()),bs)
     # first target (header) is automatically added by builder
-    #if len(target) < 2:
-    #    # second target is implementation
-    #    target.append(adjustixes(bs,
-    #                             env.subst('$QT_UICIMPLPREFIX'),
-    #                             env.subst('$QT_UICIMPLSUFFIX')))
+    if len(target) < 2:
+        # second target is implementation
+        target.append(
+            #env.File(
+                adjustixes(
+                    bs,
+                    env.subst('$QT_UICIMPLPREFIX'),
+                    env.subst('$QT_UICIMPLSUFFIX')
+                )
+            #)
+        )
     #if len(target) < 3:
     #    # third target is moc file
-    #    target.append(adjustixes(bs,
-    #                             env.subst('$QT_MOCHPREFIX')+env.subst('$QT_UICIMPLPREFIX'),
-    #                             env.subst('$QT_MOCHSUFFIX')#+env.subst('$QT_UICIMPLSUFFIX')
-    #                             ))
-    #if not isinstance( target[0], str ):
-    #    print 'target[0]', target[0].str_for_display()
-    #if not isinstance( source[0], str ):
-    #    print 'source[0]', source[0].str_for_display()
-    #print 'uicEmitter: ', target, '<--', source
+    #    target.append(
+    #        #env.File(
+    #            adjustixes(
+    #                bs,
+    #                env.subst('$QT_MOCHPREFIX')+'ui_',#+env.subst('$QT_UICIMPLPREFIX'), # to check
+    #                env.subst('$QT_MOCHSUFFIX')#+env.subst('$QT_UICIMPLSUFFIX')
+    #            )
+    #        #)
+    #    )
+    #print '-- uicEmitter --'
+    #for i in range(len(target)):
+    #    if not isinstance( target[i], str ):
+    #        print 'target['+str(i)+']', target[i].str_for_display()
+    #    else:
+    #        print 'target['+str(i)+']', target[i]
+    #for i in range(len(source)):
+    #    if not isinstance( source[i], str ):
+    #        print 'source['+str(i)+']', source[i].str_for_display()
+    #    else:
+    #        print 'source['+str(i)+']', source[i]
+    #print '-- uicEmitter --'
     return target, source
 
 def uicScannerFunc(node, env, path):
@@ -251,52 +248,48 @@ def generate(env):
     Action = SCons.Action.Action
     Builder = SCons.Builder.Builder
 
-    env.SetDefault(#QTDIR  = _detect(env),
-                   #QT_BINPATH = os.path.join('$QTDIR', 'bin'),
-                   #QT_CPPPATH = os.path.join('$QTDIR', 'include'),
-                   #QT_LIBPATH = os.path.join('$QTDIR', 'lib'),
-                   #QT_MOC = os.path.join('$QT_BINPATH','moc'),
-                   #QT_UIC = os.path.join('$QT_BINPATH','uic'),
-                   #QT_LIB = 'qt', # may be set to qt-mt
+    env.SetDefault(
+        QT_AUTOSCAN = 1, # scan for moc'able sources
 
-                   QT_AUTOSCAN = 1, # scan for moc'able sources
+        # Some QT specific flags. I don't expect someone wants to
+        # manipulate those ...
+        QT_UICIMPLFLAGS = CLVar(''),
+        QT_UICDECLFLAGS = CLVar(''),
+        QT_MOCFROMHFLAGS = CLVar(''),
+        QT_MOCFROMCXXFLAGS = CLVar('-i'),
 
-                   # Some QT specific flags. I don't expect someone wants to
-                   # manipulate those ...
-                   QT_UICIMPLFLAGS = CLVar(''),
-                   QT_UICDECLFLAGS = CLVar(''),
-                   QT_MOCFROMHFLAGS = CLVar(''),
-                   QT_MOCFROMCXXFLAGS = CLVar('-i'),
+        # suffixes/prefixes for the headers / sources to generate
+        QT_UICDECLPREFIX = '', #'ui_',
+        QT_UICDECLSUFFIX = '.h',
+        QT_UICIMPLPREFIX = '', #'ui_',
+        QT_UICIMPLSUFFIX = '$CXXFILESUFFIX',
+        QT_MOCHPREFIX = 'moc_',
+        QT_MOCHSUFFIX = '$CXXFILESUFFIX',
+        QT_MOCCXXPREFIX = '',
+        QT_MOCCXXSUFFIX = '.moc',
+        QT_UISUFFIX = '.ui',
 
-                   # suffixes/prefixes for the headers / sources to generate
-                   QT_UICDECLPREFIX = 'ui_',
-                   QT_UICDECLSUFFIX = '.h',
-                   QT_UICIMPLPREFIX = 'ui_',
-                   QT_UICIMPLSUFFIX = '$CXXFILESUFFIX',
-                   QT_MOCHPREFIX = 'moc_',
-                   QT_MOCHSUFFIX = '$CXXFILESUFFIX',
-                   QT_MOCCXXPREFIX = '',
-                   QT_MOCCXXSUFFIX = '.moc',
-                   QT_UISUFFIX = '.ui',
-
-                   # Commands for the qt support ...
-                   # command to generate header, implementation and moc-file
-                   # from a .ui file
-                   QT_UICCOM = [
-                    CLVar('$QT_UIC $QT_UICDECLFLAGS -o ${TARGETS[0]} $SOURCE'),
-                    #CLVar('$QT_UIC $QT_UICIMPLFLAGS -impl ${TARGETS[0].file} '
-                    #      '-o ${TARGETS[1]} $SOURCE'),
-                    #CLVar('$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[2]} ${TARGETS[0]}')
-                    ],
-                   # command to generate meta object information for a class
-                   # declarated in a header
-                   QT_MOCFROMHCOM = (
-                          '$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[0]} $SOURCE'),
-                   # command to generate meta object information for a class
-                   # declarated in a cpp file
-                   QT_MOCFROMCXXCOM = [
-                    CLVar('$QT_MOC $QT_MOCFROMCXXFLAGS -o ${TARGETS[0]} $SOURCE'),
-                    Action(checkMocIncluded,None)])
+        # Commands for the qt support ...
+        # command to generate header, implementation and moc-file
+        # from a .ui file
+        QT_UICCOM = [
+            CLVar('$QT_UIC $QT_UICDECLFLAGS -o ${TARGETS[0]} $SOURCE'),
+            CLVar('$QT_UIC $QT_UICIMPLFLAGS -impl ${TARGETS[0].file} '
+                  '-o ${TARGETS[1]} $SOURCE'),
+            #CLVar('$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[2]} ${TARGETS[0]}'),
+        ],
+        # command to generate meta object information for a class
+        # declarated in a header
+        QT_MOCFROMHCOM = (
+              '$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[0]} $SOURCE'
+        ),
+        # command to generate meta object information for a class
+        # declarated in a cpp file
+        QT_MOCFROMCXXCOM = [
+            CLVar('$QT_MOC $QT_MOCFROMCXXFLAGS -o ${TARGETS[0]} $SOURCE'),
+            Action(checkMocIncluded,None),
+        ]
+    )
 
     # ... and the corresponding builders
     uicBld = Builder(action=SCons.Action.Action('$QT_UICCOM', '$QT_UICCOMSTR'),
@@ -338,12 +331,6 @@ def enableQtEmmitters(self):
                       LIBEMITTER  =[AutomocStatic],
                       )
 
-
 def exists(env):
-    return True #_detect(env)
+    return True
 
-# Local Variables:
-# tab-width:4
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=4 shiftwidth=4:
