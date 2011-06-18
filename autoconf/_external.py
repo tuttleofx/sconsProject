@@ -73,7 +73,7 @@ class HeaderChecker(BaseLibChecker):
 		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
 		return True
 
-	def postconfigure(self, project, env):
+	def postconfigure(self, project, env, level):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''

@@ -198,23 +198,76 @@ class SConsProject:
 					print ':' * 10, ' %s = %s' % (key, dict[key])
 		sys.stdout.write(self.env['color_clear'])
 
+	def getAllAbsoluteCwd(self, relativePath=None):
+		'''
+		Returns current directory (in original path and VariantDir path) or relativePath in current directory.
+		Paths are absolute.
+		Returns a list.
+		'''
+		#print str(dir( Dir('#') ))
+		if isinstance(relativePath, list):
+			alldirs = []
+			for rp in relativePath:
+				alldirs.extend( self.getAllAbsoluteCwd(rp) )
+			return alldirs
+		if relativePath:
+			if relativePath.startswith('#'):
+				return [os.path.join(self.dir, relativePath[1:]),
+				        os.path.join(self.dir_output_build, relativePath[1:])]
+			elif os.path.isabs(relativePath):
+				if relativePath.startswith(self.dir):
+					return [relativePath,
+					        os.path.join(self.dir_output_build, relativePath[len(self.dir):])]
+				return [relativePath]
+			return [os.path.join(Dir('.').srcnode().abspath, relativePath),
+			        os.path.join(Dir('.').abspath, relativePath)]
+		else:
+			return [Dir('.').srcnode().abspath,
+			        Dir('.').abspath]
+
 	def getRealAbsoluteCwd(self, relativePath=None):
-		'''Returns original current directory (not inside the VariantDir)...'''
-		dir = Dir('.').srcnode().abspath
+		'''
+		Returns original current directory (not inside the VariantDir) or relativePath in original current directory.
+		Paths are absolute.
+		'''
 		if isinstance(relativePath, list):
 			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
 		if relativePath:
-			return os.path.join(dir, relativePath)
+			if relativePath.startswith('#'):
+				return os.path.join(self.dir, relativePath[1:])
+			elif os.path.isabs(relativePath):
+				return relativePath
+			return os.path.join(Dir('.').srcnode().abspath, relativePath)
 		else:
-			return dir
+			return Dir('.').srcnode().abspath
+
+	def getRealTopCwd(self, relativePath=None):
+		'''
+		Returns original current directory (not inside the VariantDir) or relativePath in original current directory.
+		Paths are relative to top.
+		'''
+		if isinstance(relativePath, list):
+			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
+		cdir = Dir('.').srcnode().abspath
+		if cdir.startswith(self.dir):
+			cdir = os.path.join('#', dir[len(self.dir):])
+		if relativePath:
+			return os.path.join(cdir, relativePath)
+		else:
+			return cdir
 
 	def getAbsoluteCwd(self, relativePath=None):
-		'''Returns current directory...'''
-		dir = Dir('.').abspath
+		'''
+		Returns current directory or relativePath in current directory.
+		Paths are absolute.
+		'''
+		if isinstance(relativePath, list):
+			return [self.getAbsoluteCwd(rp) for rp in relativePath]
+		cdir = Dir('.').abspath
 		if relativePath:
-			return os.path.join(dir, relativePath)
+			return os.path.join(cdir, relativePath)
 		else:
-			return dir
+			return cdir
 
 	def getSubDirsAbsolutePath(self, current_dir=None):
 		'''Returns sub-directories with absolute paths (in original file tree).'''
@@ -639,14 +692,14 @@ class SConsProject:
 		for eachlib in libs:
 			libdeps = self.findLibsDependencies(eachlib)
 			allLibs.extend( libdeps )
-			allLibs.append( eachlib )
+			allLibs.append( (eachlib,0) )
 		allLibs = self.uniqLibs(allLibs)
 
 		#print 'libs:', [a.name for a in libs]
 		#print 'allLibs:', [a.name for a in allLibs]
 		#print '-'*10
 		
-		for lib in allLibs:
+		for lib, level in allLibs:
 			if not lib.initOptions(self, opts_current):
 				if lib not in self.libs_error:
 					self.libs_error.append(lib)
@@ -657,7 +710,7 @@ class SConsProject:
 		self.applyOptionsOnEnv(env)
 
 		if self.needConfigure():
-			for lib in allLibs:
+			for lib, level in allLibs:
 				if not lib.enabled(env):
 					print 'Target "'+name+'" compiled without "'+lib.name+'" library.'
 				else:
@@ -673,8 +726,8 @@ class SConsProject:
 								self.libs_error.append(lib)
 						env = conf.Finish()
 
-		for lib in allLibs:
-			lib.postconfigure(self, env)
+		for lib, level in allLibs:
+			lib.postconfigure(self, env, level)
 
 		sys.stdout.write(self.env['color_clear'])
 
@@ -715,7 +768,7 @@ class SConsProject:
 
 		check_opts = self.createOptions(self.sconf_files, ARGUMENTS)
 		self.defineHiddenOptions(check_opts)
-		for a in dependencies:
+		for a, level in dependencies:
 			a.initOptions(self, check_opts)
 		if not lib.initOptions(self, check_opts):
 			if lib not in self.libs_error:
@@ -723,13 +776,13 @@ class SConsProject:
 		check_opts.Update(check_env)
 		self.applyOptionsOnEnv(check_env)
 
-		for a in dependencies:
+		for a, level in dependencies:
 			a.configure(self, check_env)
 		if not lib.configure(self, check_env):
 			if lib not in self.libs_error:
 				self.libs_error.append(lib)
 		check_conf = check_env.Configure()
-		for a in dependencies:
+		for a, level in dependencies:
 			a.check(self, check_conf)
 		if not lib.check(self, check_conf):
 			if lib not in self.libs_error:
@@ -745,23 +798,23 @@ class SConsProject:
 		'''
 		libs = []
 		names = []
-		for s in allLibs:
-			if s.name not in names:
-				names.append( s.name )
-				libs.append( s )
+		for s, level in allLibs:
+			if (s.name, s.id) not in names:
+				names.append( (s.name, s.id) )
+				libs.append( (s,level) )
 		return libs
 
 	def findLibsDependencies(self, libs):
 		'''
 		return the list of all dependencies of lib (without the lib itself).
 		'''
-		def internFindLibDependencies(lib):
+		def internFindLibDependencies(lib, level=0):
 			if not lib:
 				return []
 			ll = []
 			for l in lib.dependencies:
-				ll.extend( internFindLibDependencies(l) )
-			ll.append(lib)
+				ll.extend( internFindLibDependencies(l, level+1) )
+			ll.append( (lib,level) )
 			return ll
 		
 		if not isinstance(libs, list):
@@ -792,13 +845,26 @@ class SConsProject:
 			else:
 				dst[k] = v
 
-	def ObjectLibrary( self, target, libraries=[], includes=[], envFlags={} ):
+	def prepareIncludes(self, dirs):		
+		#print 'dirs+includes:', dirs+includes
+		#print 'self.unique(self.getAllAbsoluteCwd(dirs+includes)):', self.unique(self.getAllAbsoluteCwd(dirs+includes))
+		objDirs = [Dir(d) for d in self.getAllAbsoluteCwd(dirs)]
+		#print 'objDirs:', str(objDirs)
+		#oldObjDirs = objDirs
+		objDirs = self.unique(objDirs)
+		#if len(oldObjDirs) != len(objDirs):
+		#	print '--prepareIncludes--'*100
+		#	print len(oldObjDirs), ' -- ', len(objDirs)
+		return objDirs
+
+	def ObjectLibrary( self, target, libraries=[], includes=[], envFlags={}, sources=[] ):
 		'''
 		To create an ObjectLibrary and expose it in the project to be easily used by other targets.
 		This is not a library just a configuration object with CPPDEFINES, CCFLAGS, LIBS, etc.
 		'''
+		unusedLocalEnv = self.createEnv( libraries, name=target )
 		# expose this library
-		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.getRealAbsoluteCwd(includes)+includes, envFlags=envFlags, dependencies=libraries )
+		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=libraries, addSources=self.getAbsoluteCwd(sources) )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -829,7 +895,7 @@ class SConsProject:
 			localEnv = self.createEnv( libraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -842,6 +908,9 @@ class SConsProject:
 			localEnv['OBJSUFFIX'] = '.os'
 			localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
 			localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
+		
+		if 'ADDSRC' in localEnv:
+			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
 
 		# create the target
 		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
@@ -859,7 +928,7 @@ class SConsProject:
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=libraries+dependencies, sconsNode=dstLibInstall )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=libraries+dependencies, sconsNode=dstLibInstall )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -892,13 +961,16 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
 			localEnv.Replace( **replaceLocalEnvFlags )
 		if globalEnvFlags:
 			localEnv.AppendUnique( **globalEnvFlags )
+
+		if 'ADDSRC' in localEnv:
+			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
 
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
@@ -916,7 +988,7 @@ class SConsProject:
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.getRealAbsoluteCwd(includes), envFlags=envFlags, dependencies=localLibraries+dependencies, sconsNode=dstLibInstall )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=localLibraries+dependencies, sconsNode=dstLibInstall )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -949,7 +1021,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.getRealAbsoluteCwd(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -986,7 +1058,7 @@ class SConsProject:
 		seen = set()
 		return [x for x in seq if x not in seen and not seen.add(x)]
 
-	def scanFilesInDir(self, directory, accept, reject):
+	def scanFilesInDir(self, directory, accept, reject, recursive=True):
 		'''
 		Recursively search files in "directory" that matches 'accepts' wildcards and don't contains "reject"
 		'''
@@ -994,7 +1066,11 @@ class SConsProject:
 		l_reject = self.asList( reject )
 		sources = []
 		realcwd = self.getRealAbsoluteCwd()
-		paths = self.recursiveDirs( self.getRealAbsoluteCwd(directory) )
+		paths = []
+		if recursive:
+			paths = self.recursiveDirs( self.getRealAbsoluteCwd(directory) )
+		else:
+			paths = self.getRealAbsoluteCwd(directory)
 		for path in paths:
 			for pattern in l_accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
@@ -1005,7 +1081,7 @@ class SConsProject:
 		lsources = map(toLocalDirs, sources)
 		return self.unique(lsources)
 
-	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], unique=True):
+	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], unique=True, recursive=True):
 		'''
 		Recursively search files in "dirs" that matches 'accepts' wildcards and don't contains "reject"
 		@param[in] unique Uniquify the list of files
@@ -1013,7 +1089,7 @@ class SConsProject:
 		l_dirs = self.asList( dirs )
 		files = []
 		for d in l_dirs:
-			files += self.scanFilesInDir(d, accept, reject)
+			files += self.scanFilesInDir(d, accept, reject, recursive)
 		if not unique:
 			return files
 		return self.unique(files)
