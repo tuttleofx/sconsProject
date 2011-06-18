@@ -16,6 +16,16 @@ import compiler
 from utils import *
 from utils.colors import *
 
+def join_if_basedir_not_empty( *dirs ):
+	'''
+	Join directories like standard 'os.path.join' function but with the particular case that if the first directory is empty, the function return an empty string.
+	For example if you join '' and 'include', the result is ''.
+	'''
+	if not dirs or not dirs[0]:
+		return ''
+	return os.path.join(*dirs)
+	
+
 class SConsProject:
 	'''
 	This is a base class helper for SCons build tool.
@@ -50,7 +60,7 @@ class SConsProject:
 			plugin = env_local.SharedLibrary( target=pluginName, source=sources )
 			env_local.InstallAs( self.inOutputBin(), plugin )
 
-	project = MyProject()
+	project = MyProject(
 	Export('project')
 	Export({'libs':project.libs})
 
@@ -161,8 +171,9 @@ class SConsProject:
 		SetOption('max_drift', 60 * 15) # cache the checksum after max_drift seconds
 		# Normally you tell Scons about include directories by setting the CPPPATH construction variable, which causes SCons to search those directories when doing implicit dependency scans and also includes those directories in the compile command line. If you have header files that never or rarely change (e.g. system headers, or C run-time headers), then you can exclude them from CPPPATH and include them in the CCFLAGS construction variable instead, which causes SCons to ignore those include directories when scanning for implicit dependencies. Carefully tuning the include directories in this way can usually result in a dramatic speed increase with very little loss of accuracy.
 		# To achieve this we add a new variable 'EXTERNCPPPATH' which is the same as CPPPATH but without searching for implicit dependencies in those directories. So we always use EXTERNCPPPATH for external libraries.
-		self.env['_CPPINCFLAGS'] = '$( ${_concat(INCPREFIX, CPPPATH,       INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)' +\
-		                           '$( ${_concat(INCPREFIX, EXTERNCPPPATH, INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)'
+		self.env['_CPPINCFLAGS'] = '$( ${_concat(INCPREFIX, CPPPATH,       INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} ' \
+		                           '${_concat(INCPREFIX, EXTERNCPPPATH, INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)'
+		self.env['_join_if_basedir_not_empty'] = join_if_basedir_not_empty
 
 
 	#------------------------------------ Utils -----------------------------------#
