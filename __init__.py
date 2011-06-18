@@ -146,10 +146,23 @@ class SConsProject:
 		self.env['ENV']['PATH'] = os.environ['PATH'] # access to the compiler (if not in '/usr/bin')
 
 		# scons optimizations...
+		# http://www.scons.org/wiki/GoFastButton
+		#
+		# Next line is important, it deactivates tools search for default variable, just note that now in SConscript you have 
+		# to use env.Program(...) instead of simply Program().
+		SCons.Defaults.DefaultEnvironment(tools = [])
+		# Avoid RCS and SCCS scans by using env.SourceCode(".", None) - this is especially interesting if you are using lots of c or c++ headers in your program and that your file system is remote (nfs, samba).
 		self.env.SourceCode('.', None)
+		# as of SCons 0.98, you can set the Decider function on an environment. MD5-timestamp says if the timestamp matches, don't bother re-MD5ing the file. This can give huge speedups.
 		self.env.Decider('MD5-timestamp')
+		# This option tells SCons to intelligently cache implicit dependencies. It attempts to determine if the implicit dependencies have changed since the last build, and if so it will recalculate them. This is usually slower than using --implicit-deps-unchanged, but is also more accurate.
 		SetOption('implicit_cache', 1)
+		# By default SCons will calculate the MD5 checksum of every source file in your build each time it is run, and will only cache the checksum after the file is 2 days old. This default of 2 days is to protect from clock skew from NFS or revision control systems. You can tweak this delay using --max-drift=SECONDS where SECONDS is some number of seconds. Decreasing SECONDS can improve build speed by eliminating superfluous MD5 checksum calculations.
 		SetOption('max_drift', 60 * 15) # cache the checksum after max_drift seconds
+		# Normally you tell Scons about include directories by setting the CPPPATH construction variable, which causes SCons to search those directories when doing implicit dependency scans and also includes those directories in the compile command line. If you have header files that never or rarely change (e.g. system headers, or C run-time headers), then you can exclude them from CPPPATH and include them in the CCFLAGS construction variable instead, which causes SCons to ignore those include directories when scanning for implicit dependencies. Carefully tuning the include directories in this way can usually result in a dramatic speed increase with very little loss of accuracy.
+		# To achieve this we add a new variable 'EXTERNCPPPATH' which is the same as CPPPATH but without searching for implicit dependencies in those directories. So we always use EXTERNCPPPATH for external libraries.
+		self.env['_CPPINCFLAGS'] = '$( ${_concat(INCPREFIX, CPPPATH,       INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)' +\
+		                           '$( ${_concat(INCPREFIX, EXTERNCPPPATH, INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)'
 
 
 	#------------------------------------ Utils -----------------------------------#
@@ -465,6 +478,8 @@ class SConsProject:
 		opts.Add(BoolVariable('windows', 'operating system', self.windows))
 		opts.Add(BoolVariable('macos', 'operating system', self.macos))
 		opts.Add(BoolVariable('visualc', 'Compilator', self.windows))
+
+		opts.Add('EXTERNCPPPATH', 'Additional preprocessor paths (like CPPPATH but without dependencies check)', [])
 
 		# display options
 		opts.Add('SHCCCOMSTR', 'display option', '$SHCCCOM')

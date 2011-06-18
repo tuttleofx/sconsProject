@@ -67,10 +67,7 @@ class BaseLibChecker(object):
 
 		env.AppendUnique( CPPDEFINES='WITH_'+self.name.upper() )
 		if self.enabled(env,'incdir_'+self.name):
-			#if self.language == 'c++':
-			env.AppendUnique( CPPPATH=env['incdir_'+self.name] )
-			if self.language == 'c':
-				env.AppendUnique( CPATH=env['incdir_'+self.name] )
+			env.AppendUnique( EXTERNCPPPATH=env['incdir_'+self.name] )
 
 		if self.enabled(env,'libdir_'+self.name):
 			env.AppendUnique( LIBPATH=env['libdir_'+self.name] )
