@@ -21,6 +21,9 @@ def locateQt4Command(env, command, bindir):
 		path = env.WhereIs(prog, path=bindir)
 		if path:
 			return path
+		path = env.WhereIs(prog)
+		if path:
+			return path
 	
 	msg = 'Qt4 command "' + command + '" not found. Tried: ' + str(progs) + '.'
 	#raise Exception(msg)
