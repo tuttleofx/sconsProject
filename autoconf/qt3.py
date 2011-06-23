@@ -61,7 +61,7 @@ class Qt3Checker(LibWithHeaderChecker):
 
 	def initOptions(self, project, opts):
 		LibWithHeaderChecker.initOptions(self, project, opts)
-		opts.Add( 'bindir_'+self.name,   'Base directory for '+self.name, os.path.join('$dir_'+self.name, 'bin') )
+		opts.Add( 'bindir_'+self.name,   'Base directory for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "bin" )}' )
 		return True
 
 	def configure(self, project, env):
