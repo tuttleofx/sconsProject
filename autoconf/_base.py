@@ -9,7 +9,6 @@ windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
 macos = sys.platform.lower().startswith("darwin")
 linux = not windows and not macos
 unix = not windows
-default_dir = '/custom/user/path' if unix else ''
 
 def asList(v):
 	'''Return v inside a list if not a list.'''
@@ -21,6 +20,7 @@ class BaseLibChecker(object):
 	'''
 	Base class for lib checkers.
 	'''
+	id = 0
 	error        = ''
 	name         = 'name-empty'
 	language     = 'c'
@@ -40,15 +40,21 @@ class BaseLibChecker(object):
 			return env['with_'+self.name]
 		return False
 
-	def initOptions(self, project, opts):
+	def initOption_with(self, project, opts):
 		'''
 		Init options for enable/disable or configure the library.
 		'''
 		opts.Add( Variables.BoolVariable( 'with_'+self.name,   'Enable compilation with '+self.name, True ) )
+
+	def initOptions(self, project, opts):
+		'''
+		Init options for enable/disable or configure the library.
+		'''
+		self.initOption_with(project, opts)
 		opts.Add( self.name, 'To customize the libraries names if particular on your platform or compiled version.', self.libs )
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
-		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, default_dir )
+		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, '' )
 		return True
 
 	def configure(self, project, env):
@@ -58,12 +64,9 @@ class BaseLibChecker(object):
 		# project.printEnv( env, keys=[ 'with_'+self.name, 'incdir_'+self.name, 'libdir_'+self.name, ] )
 		#env.ParseConfig('pkg-config --cflags --libs ' + self.libs)
 
-		env.AppendUnique( CPPDEFINES='with_'+self.name )
+		env.AppendUnique( CPPDEFINES='WITH_'+self.name.upper() )
 		if self.enabled(env,'incdir_'+self.name):
-			#if self.language == 'c++':
-			env.AppendUnique( CPPPATH=env['incdir_'+self.name] )
-			if self.language == 'c':
-				env.AppendUnique( CPATH=env['incdir_'+self.name] )
+			env.AppendUnique( EXTERNCPPPATH=env['incdir_'+self.name] )
 
 		if self.enabled(env,'libdir_'+self.name):
 			env.AppendUnique( LIBPATH=env['libdir_'+self.name] )
@@ -79,7 +82,7 @@ class BaseLibChecker(object):
 
 		return True
 
-	def postconfigure(self, project, env):
+	def postconfigure(self, project, env, level):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''

@@ -21,8 +21,8 @@ class LibWithHeaderChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name, os.path.join('$dir_'+self.name, 'include') )
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
+		opts.Add( 'incdir_'+self.name, 'Include directories for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "include" )}' )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "lib" )}' )
 		return True
 
 	def check(self, project, conf):
@@ -47,8 +47,8 @@ class LibChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, os.path.join('$dir_'+self.name, 'include') )
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
+		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "include" )}' )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "lib" )}' )
 		return True
 
 	def check(self, project, conf):
@@ -69,11 +69,11 @@ class HeaderChecker(BaseLibChecker):
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
-		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, os.path.join('$dir_'+self.name, 'include') )
-		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, os.path.join('$dir_'+self.name, 'lib') )
+		opts.Add( 'incdir_'+self.name, 'Include directory for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "include" )}' )
+		opts.Add( 'libdir_'+self.name, 'Link directories for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "lib" )}' )
 		return True
 
-	def postconfigure(self, project, env):
+	def postconfigure(self, project, env, level):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''
@@ -84,3 +84,5 @@ class HeaderChecker(BaseLibChecker):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		return result
+
+

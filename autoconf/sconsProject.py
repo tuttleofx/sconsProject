@@ -10,7 +10,7 @@ class SConsProjectChecker(BaseLibChecker):
         pass
 
     def initOptions(self, project, opts):
-        opts.Add( Variables.BoolVariable( 'with_'+self.name, 'enabled compilation with '+self.name, True  ) )
+        self.initOption_with(project, opts)
         return True
 
     def configure(self, project, env):
