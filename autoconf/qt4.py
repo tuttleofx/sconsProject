@@ -1,5 +1,6 @@
 from _external import *
 import os
+import SCons.Util
 
 def unique(list):
 	return dict.fromkeys(list).keys()
@@ -84,7 +85,31 @@ class Qt4Checker(LibWithHeaderChecker):
 		rcc = locateQt4Command(env, 'rcc', bindir)
 		lupdate = locateQt4Command(env, 'lupdate', bindir)
 		lrelease = locateQt4Command(env, 'lrelease', bindir)
-		#print 'moc', moc
+		
+		# specific part for Qt4
+		env.Replace(
+				# suffixes/prefixes for the headers / sources to generate
+				QT_UICDECLPREFIX = 'ui_',
+				QT_UICDECLSUFFIX = '.h',
+				QT_UICIMPLPREFIX = 'ui_',
+				QT_UICIMPLSUFFIX = '$CXXFILESUFFIX',
+				QT_MOCHPREFIX = 'moc_',
+				QT_MOCHSUFFIX = '$CXXFILESUFFIX',
+				QT_MOCCXXPREFIX = '',
+				QT_MOCCXXSUFFIX = '.moc',
+				QT_UISUFFIX = '.ui',
+
+				# Commands for the qt support ...
+				# command to generate header, implementation and moc-file
+				# from a .ui file
+				QT_UICCOM = [
+				    SCons.Util.CLVar('$QT_UIC $QT_UICDECLFLAGS -o ${TARGETS[0]} $SOURCE'),
+				    #SCons.Util.CLVar('$QT_UIC $QT_UICIMPLFLAGS -impl ${TARGETS[0].file} '
+				    #      '-o ${TARGETS[1]} $SOURCE'),
+				    #SCons.Util.CLVar('$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[2]} ${TARGETS[0]}'),
+				],
+			)
+		
 		env.SetDefault(
 				QT_MOC = moc,
 				QT_UIC = uic,
@@ -92,7 +117,6 @@ class Qt4Checker(LibWithHeaderChecker):
 				QT4_LUPDATE = lupdate,
 				QT4_LRELEASE = lrelease,
 			)
-		
 		return BaseLibChecker.configure(self, project, env)
 	
 	def check(self, project, conf):
