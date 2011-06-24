@@ -21,6 +21,7 @@ def locateQt4Command(env, command, bindir):
 		path = env.WhereIs(prog, path=bindir)
 		if path:
 			return path
+	for prog in progs:
 		path = env.WhereIs(prog)
 		if path:
 			return path
@@ -106,7 +107,7 @@ class Qt4Checker(LibWithHeaderChecker):
 	
 	def postconfigure(self, project, env, level):
 		'''
-		Cas particulier. Permet d'ajouter des elements a l'environnement apres les checks de toutes les libs.
+		Particular case. Allows to add things to environment after all libraries checks.
 		'''
 		if len(self.uiFiles):
 			uis = [env.Uic( ui ) for ui in self.uiFiles]
