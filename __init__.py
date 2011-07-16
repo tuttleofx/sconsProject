@@ -239,12 +239,17 @@ class SConsProject:
 				return [os.path.join(self.dir, relativePath[1:]),
 				        os.path.join(self.dir_output_build, relativePath[1:])]
 			elif os.path.isabs(relativePath):
-				if relativePath.startswith(self.dir):
+				if relativePath.startswith(self.dir_output_build):
 					return [relativePath,
-					        os.path.join(self.dir_output_build, relativePath[len(self.dir):])]
-				return [relativePath]
-			return [os.path.join(Dir('.').srcnode().abspath, relativePath),
-			        os.path.join(Dir('.').abspath, relativePath)]
+					        os.path.join(self.dir, relativePath[len(self.dir_output_build)+1:])]
+				elif relativePath.startswith(self.dir):
+					return [relativePath,
+					        os.path.join(self.dir_output_build, relativePath[len(self.dir)+1:])]
+				else:
+					return [relativePath]
+			else:
+				return [os.path.join(Dir('.').srcnode().abspath, relativePath),
+				        os.path.join(Dir('.').abspath, relativePath)]
 		else:
 			return [Dir('.').srcnode().abspath,
 			        Dir('.').abspath]
@@ -274,7 +279,7 @@ class SConsProject:
 			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
 		cdir = Dir('.').srcnode().abspath
 		if cdir.startswith(self.dir):
-			cdir = os.path.join('#', dir[len(self.dir):])
+			cdir = os.path.join('#', cdir[len(self.dir)+1:])
 		if relativePath:
 			return os.path.join(cdir, relativePath)
 		else:
@@ -888,9 +893,12 @@ class SConsProject:
 		To create an ObjectLibrary and expose it in the project to be easily used by other targets.
 		This is not a library just a configuration object with CPPDEFINES, CCFLAGS, LIBS, etc.
 		'''
+		l_libraries = self.asList(libraries)
+		l_includes = self.asList(includes)
+		l_sources = self.asList(sources)
 		unusedLocalEnv = self.createEnv( libraries, name=target )
 		# expose this library
-		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=libraries, addSources=self.getAbsoluteCwd(sources) )
+		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.prepareIncludes(l_includes), envFlags=envFlags, dependencies=l_libraries, addSources=self.getRealAbsoluteCwd(l_sources) )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -904,10 +912,14 @@ class SConsProject:
 		To create a StaticLibrary and expose it in the project to be simply used by other targets.
 		The shared option allows to create a static library compiled with position independant code (like in shared libraries).
 		'''
+		l_sources = self.asList(sources)
+		l_dirs = self.asList(dirs)
+		l_libraries = self.asList(libraries)
+		l_includes = self.asList(includes)
 		sourcesFiles = []
-		sourcesFiles += sources
-		if dirs:
-			sourcesFiles += self.scanFiles( dirs, accept, reject )
+		sourcesFiles += l_sources
+		if l_dirs:
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -921,7 +933,7 @@ class SConsProject:
 			localEnv = self.createEnv( libraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -954,7 +966,7 @@ class SConsProject:
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=libraries+dependencies, sconsNode=dstLibInstall )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(l_includes), envFlags=envFlags, dependencies=libraries+dependencies, sconsNode=dstLibInstall )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -967,10 +979,14 @@ class SConsProject:
 		'''
 		To create a SharedLibrary and expose it in the project to be simply used by other targets.
 		'''
+		l_sources = self.asList(sources)
+		l_dirs = self.asList(dirs)
+		l_libraries = self.asList(libraries)
+		l_includes = self.asList(includes)
 		sourcesFiles = []
-		sourcesFiles += sources
-		if dirs:
-			sourcesFiles += self.scanFiles( dirs, accept, reject )
+		sourcesFiles += l_sources
+		if l_dirs:
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -987,7 +1003,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -1014,7 +1030,7 @@ class SConsProject:
 		# expose this library
 		envFlags=externEnvFlags
 		self.appendDict( envFlags, globalEnvFlags )
-		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(includes), envFlags=envFlags, dependencies=localLibraries+dependencies, sconsNode=dstLibInstall )
+		dstLibChecker = autoconf._internal.InternalLibChecker( lib=target, includes=self.prepareIncludes(l_includes), envFlags=envFlags, dependencies=localLibraries+dependencies, sconsNode=dstLibInstall )
 
 		# add the new declared library to the list of libs checker in self.libs
 		setattr(self.libs, target, dstLibChecker)
@@ -1027,10 +1043,14 @@ class SConsProject:
 		'''
 		To create a program and expose it in the project to be simply used by other targets.
 		'''
+		l_sources = self.asList(sources)
+		l_dirs = self.asList(dirs)
+		l_libraries = self.asList(libraries)
+		l_includes = self.asList(includes)
 		sourcesFiles = []
-		sourcesFiles += sources
-		if dirs:
-			sourcesFiles += self.scanFiles( dirs, accept, reject )
+		sourcesFiles += l_sources
+		if l_dirs:
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -1047,7 +1067,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -1086,7 +1106,7 @@ class SConsProject:
 
 	def scanFilesInDir(self, directory, accept, reject, recursive=True):
 		'''
-		Recursively search files in "directory" that matches 'accepts' wildcards and don't contains "reject"
+		Recursively search files in 'directory' that matches 'accepts' wildcards and doesn't contain 'reject'
 		'''
 		l_accept = self.asList( accept )
 		l_reject = self.asList( reject )
