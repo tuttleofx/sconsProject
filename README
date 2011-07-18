@@ -1,0 +1,24 @@
+SConsProject
+
+	The SConsProject module proposes you a way to easily create the compilation
+	system of your project with the minimum of informations.
+
+	The main functionnalities are:
+	- It setups the file tree for build objects.
+	- It allows you to declare dependencies to external or internal libraries.
+	  For external libraries, there is a predeclared list of standard libraries
+	  with the headers, link flags and dependencies.
+	- It loads configuration files, so each developper can setup the
+	  installation with specific paths to libraries, etc.
+	- It proposes some utility functions.
+	- It's only an helper around SCons, so you can always overload it or mix it
+	  with native SCons code.
+
+
+License
+
+	SConsProject is distributed under the MIT license, a full copy of which is
+	available in the LICENSE file in this package. This module use the same
+	license as the SCons project.
+
+

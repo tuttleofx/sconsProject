@@ -1,3 +1,9 @@
+"""SConsProject
+
+The SConsProject module proposes you a way to easily create the compilation
+system of your project with the minimum of informations.
+
+"""
 
 from SCons.Environment import *
 from SCons.Script import *
