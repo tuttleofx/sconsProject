@@ -1,24 +1,39 @@
-SConsProject
+	SConsProject
 
-	The SConsProject module proposes you a way to easily create the compilation
-	system of your project with the minimum of informations.
+The SConsProject module proposes a way to easily create the compilation system
+of your project with the minimum of information. It’s an helper around SCons.
+SConsProject is for SCons, what is CMake for make. SCons like make, is a low
+level tool, which has no information of standard libraries, compiler flags, …
+SConsProject like CMake, has the knowledge of standard libraries and helps you
+to structure your build system.
 
-	The main functionnalities are:
-	- It setups the file tree for build objects.
-	- It allows you to declare dependencies to external or internal libraries.
-	  For external libraries, there is a predeclared list of standard libraries
-	  with the headers, link flags and dependencies.
-	- It loads configuration files, so each developper can setup the
-	  installation with specific paths to libraries, etc.
-	- It proposes some utility functions.
-	- It's only an helper around SCons, so you can always overload it or mix it
-	  with native SCons code.
+http://sites.google.com/site/sconsproject
+http://github.com/tuttleofx/sconsProject
 
 
-License
+	Main features
 
-	SConsProject is distributed under the MIT license, a full copy of which is
-	available in the LICENSE file in this package. This module use the same
-	license as the SCons project.
+ * Minimize and enhance the readability of our compilation system rules.
+ * It allows you to declare dependencies to external or internal libraries. For
+   external libraries, there is a predeclared list of standard libraries with
+   the headers, link flags and dependencies.
+ * It loads configuration files, so each developer can setup the installation
+   with specific paths to libraries, etc.
+ * It simplifies multi-platform development. It is tested on Linux, MacOS and
+   Windows (MSVC and GCC inside MSDOS and GCC inside cygwin).
+ * It setups the file tree for build objects.
+ * It provides some utility functions.
+ * As in SCons philosophy, you don’t need to generate intermediate build files,
+   contrary to CMake or configure.
+ * It's only an helper around SCons, so you can always overload it or mix it
+   with native SCons code. So you also take all the advantages of SCons
+   and Python.
+
+
+	Licence
+
+SConsProject is distributed under the MIT license, a full copy of which is
+available in the LICENSE file in this package. This module use the same
+license as SCons.
 
 
