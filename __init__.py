@@ -1,7 +1,7 @@
 """SConsProject
 
-The SConsProject module proposes you a way to easily create the compilation
-system of your project with the minimum of informations.
+The SConsProject module proposes a way to easily create the compilation system
+of your project with the minimum of information. It's an helper around SCons.
 
 """
 

@@ -51,7 +51,7 @@ class BaseLibChecker(object):
 		Init options for enable/disable or configure the library.
 		'''
 		self.initOption_with(project, opts)
-		opts.Add( self.name, 'To customize the libraries names if particular on your platform or compiled version.', self.libs )
+		opts.Add( 'lib_'+self.name, 'To customize the libraries names if particular on your platform or compiled version.', self.libs )
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
 		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, '' )
@@ -103,7 +103,7 @@ class BaseLibChecker(object):
 		return env['fwkdir_'+self.name] != None
 	
 	def getLibs(self, env):
-		return env[self.name]
+		return env['lib_'+self.name]
 
 	def privateCheckLibWithHeader( self, conf, libs, header, language, call=False ):
 		if conf.env['check_libs'] and not self.checkDone:
