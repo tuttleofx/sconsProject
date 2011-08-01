@@ -1065,6 +1065,46 @@ class SConsProject:
 		return dstInstall
 
 
+	def UnitTest( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''
+		To create a program and expose it in the project to be simply used by other targets.
+		'''
+		sourcesFiles = []
+		sourcesFiles += sources
+		if dirs:
+			sourcesFiles += self.scanFiles( dirs, accept, reject )
+
+		if not sourcesFiles:
+			raise RuntimeError( "No source files for the target: " + target )
+		
+		localEnv = None
+		localLibraries = libraries
+		if env:
+			localEnv = env
+			self.appendLibsToEnv(localEnv, localLibraries)
+			if 'SconsProjectLibraries' in localEnv:
+				localLibraries += localEnv['SconsProjectLibraries']
+		else:
+			# if no environment we create a new one
+			localEnv = self.createEnv( localLibraries, name=target )
+
+		# apply arguments to env
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		if localEnvFlags:
+			localEnv.AppendUnique( **localEnvFlags )
+		if replaceLocalEnvFlags:
+			localEnv.Replace( **replaceLocalEnvFlags )
+		if globalEnvFlags:
+			localEnv.AppendUnique( **globalEnvFlags )
+
+		# create the target
+		dst = localEnv.UnitTest( target=target, source=sourcesFiles )
+
+		return dst
+
+
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
 		'''Return v inside a list if not a list.'''
