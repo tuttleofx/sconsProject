@@ -30,7 +30,7 @@ def join_if_basedir_not_empty( *dirs ):
 	if not dirs or not dirs[0]:
 		return ''
 	return os.path.join(*dirs)
-	
+
 
 class SConsProject:
 	'''
@@ -106,6 +106,7 @@ class SConsProject:
                                                 'doxygen',
                                                 'unittest',
                                                 'qt',
+                                                'cuda',
                                                 ],
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
