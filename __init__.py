@@ -107,7 +107,7 @@ class SConsProject:
                                                 'unittest',
                                                 'qt',
                                                 'cuda',
-                                                ],
+                                                ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
 	def __init__(self):
@@ -954,8 +954,10 @@ class SConsProject:
 		if shared:
 			localEnv.AppendUnique( CCFLAGS = self.CC['sharedobject'] )
 			localEnv['OBJSUFFIX'] = '.os'
-			localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
-			localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
+			if 'SHCCFLAGS' in localEnv:
+				localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
+			if 'SHLINKFLAGS' in localEnv:
+				localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
 		
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
