@@ -648,9 +648,12 @@ class SConsProject:
 					print '\t', lib.error
 			sys.stdout.write(self.env['color_clear'])
 			if not self.env['ignore_errors']:
-				#raise 'BuildError', 'Configure errors... Compilation STOP !'
-				print 'Configure errors... Compilation STOP !'
-				print 'Use ignore_errors=1 to try to compile without correcting the problem.'
+				print ''' '''
+				print '''Configure errors... Can't start compilation!'''
+				print '''See config.log to check the problem details.'''
+				print ''' '''
+				print '''Use ignore_errors=1 to try to compile without fixing the problem. Maybe you can build a subpart of the project.'''
+				print ''' '''
 				Exit(1)
 			sys.stdout.write(self.env['color_clear'])
 
