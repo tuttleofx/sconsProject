@@ -875,10 +875,11 @@ class SConsProject:
 		'''
 		for k, v in src.items():
 			if k in dst:
+				vlist = (v if isinstance(v, list) else [v])
 				if isinstance(dst[k], list):
-					dst[k] += v if isinstance(v, list) else [v]
+					dst[k].extend( vlist )
 				else:
-					dst[k] = dst[k] + (v if isinstance(v, list) else [v])
+					dst[k] = [dst[k]] + vlist
 			else:
 				dst[k] = v
 
