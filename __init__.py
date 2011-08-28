@@ -107,7 +107,7 @@ class SConsProject:
                                                 'unittest',
                                                 'qt',
                                                 'cuda',
-                                                ],
+                                                ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
 	def __init__(self):
@@ -648,9 +648,12 @@ class SConsProject:
 					print '\t', lib.error
 			sys.stdout.write(self.env['color_clear'])
 			if not self.env['ignore_errors']:
-				#raise 'BuildError', 'Configure errors... Compilation STOP !'
-				print 'Configure errors... Compilation STOP !'
-				print 'Use ignore_errors=1 to try to compile without correcting the problem.'
+				print ''' '''
+				print '''Configure errors... Can't start compilation!'''
+				print '''See config.log to check the problem details.'''
+				print ''' '''
+				print '''Use ignore_errors=1 to try to compile without fixing the problem. Maybe you can build a subpart of the project.'''
+				print ''' '''
 				Exit(1)
 			sys.stdout.write(self.env['color_clear'])
 
@@ -876,10 +879,11 @@ class SConsProject:
 		'''
 		for k, v in src.items():
 			if k in dst:
+				vlist = (v if isinstance(v, list) else [v])
 				if isinstance(dst[k], list):
-					dst[k] += v if isinstance(v, list) else [v]
+					dst[k].extend( vlist )
 				else:
-					dst[k] = dst[k] + (v if isinstance(v, list) else [v])
+					dst[k] = [dst[k]] + vlist
 			else:
 				dst[k] = v
 
@@ -951,8 +955,10 @@ class SConsProject:
 		if shared:
 			localEnv.AppendUnique( CCFLAGS = self.CC['sharedobject'] )
 			localEnv['OBJSUFFIX'] = '.os'
-			localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
-			localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
+			if 'SHCCFLAGS' in localEnv:
+				localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
+			if 'SHLINKFLAGS' in localEnv:
+				localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
 		
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
