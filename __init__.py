@@ -624,12 +624,6 @@ class SConsProject:
 		The last function call at the end by the SConstruct.
 		'''
 
-		doxygen = self.env.Doxygen(self.inTopDir('doc/config/Doxyfile'))
-
-		self.env.Alias('doc', doxygen)
-		self.env.Alias('doxygen', doxygen)
-		self.env.Clean(doxygen, ['doc/html'])
-
 		def printInstalledFiles(target, source, env):
 			# Whatever it takes to build
 			for t in FindInstalledFiles():
@@ -1136,7 +1130,6 @@ class SConsProject:
 		dst = localEnv.UnitTest( target=target, source=sourcesFiles )
 
 		return dst
-
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
