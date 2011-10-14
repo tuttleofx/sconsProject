@@ -277,21 +277,6 @@ class SConsProject:
 		else:
 			return Dir('.').srcnode().abspath
 
-	def getRealTopCwd(self, relativePath=None):
-		'''
-		Returns original current directory (not inside the VariantDir) or relativePath in original current directory.
-		Paths are relative to top.
-		'''
-		if isinstance(relativePath, list):
-			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
-		cdir = Dir('.').srcnode().abspath
-		if cdir.startswith(self.dir):
-			cdir = os.path.join('#', cdir[len(self.dir)+1:])
-		if relativePath:
-			return os.path.join(cdir, relativePath)
-		else:
-			return cdir
-
 	def getAbsoluteCwd(self, relativePath=None):
 		'''
 		Returns current directory or relativePath in current directory.
