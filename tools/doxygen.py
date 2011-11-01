@@ -175,6 +175,7 @@ def DoxySourceScanCheck(node, env):
    """Check if we should scan this file"""
    return os.path.isfile(node.path)
 
+
 def DoxyEmitter(source, target, env):
    """Doxygen Doxyfile emitter"""
    # possible output formats and their default values and output locations
@@ -228,9 +229,14 @@ def generate(env):
       scan_check = DoxySourceScanCheck,
    )
 
+   import SCons.Action
+   import SCons.Script
    import SCons.Builder
    doxyfile_builder = SCons.Builder.Builder(
-      action = "cd ${SOURCE.dir}  &&  ${DOXYGEN} ${SOURCE.file}",
+      #action = SCons.Action.Action( "echo TARGET.dir: ${TARGET.dir}, TARGET.file: ${TARGET.file}, SOURCE.dir: ${SOURCE.dir}, SOURCE.file: ${SOURCE.file}" ),
+      action = SCons.Action.Action(
+            [SCons.Script.Mkdir('$TARGET.dir'),
+             "cd ${SOURCE.dir}  &&  ${DOXYGEN} ${SOURCE.file}"]),
       emitter = DoxyEmitter,
       target_factory = env.fs.Entry,
       single_source = True,

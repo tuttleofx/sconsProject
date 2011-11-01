@@ -2,19 +2,16 @@ from _external import *
 from glu import *
 from gl import *
 
+libname = 'GLEW'
 if windows:
-    glew = LibWithHeaderChecker('glew32',
-                                'GL/glew.h',
-                                'c',
-                                name='glew',
-                                dependencies=[glu,gl]
-                                )
-else:
-    glew = LibWithHeaderChecker('GLEW',
-                                'GL/glew.h',
-				'c',
-				name='glew',
-                                dependencies=[glu,gl]
-				)
+	libname = 'glew32'
+
+glew = LibWithHeaderChecker(
+	libname,
+	'GL/glew.h',
+	'c',
+	name='glew',
+	dependencies=[glu,gl]
+	)
 
 

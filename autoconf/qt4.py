@@ -99,14 +99,10 @@ class Qt4Checker(LibWithHeaderChecker):
 				QT_MOCCXXSUFFIX = '.moc',
 				QT_UISUFFIX = '.ui',
 
-				# Commands for the qt support ...
-				# command to generate header, implementation and moc-file
-				# from a .ui file
+				# Qt commands
+				# command to generate header from a .ui file
 				QT_UICCOM = [
 				    SCons.Util.CLVar('$QT_UIC $QT_UICDECLFLAGS -o ${TARGETS[0]} $SOURCE'),
-				    #SCons.Util.CLVar('$QT_UIC $QT_UICIMPLFLAGS -impl ${TARGETS[0].file} '
-				    #      '-o ${TARGETS[1]} $SOURCE'),
-				    #SCons.Util.CLVar('$QT_MOC $QT_MOCFROMHFLAGS -o ${TARGETS[2]} ${TARGETS[0]}'),
 				],
 			)
 		
@@ -117,6 +113,10 @@ class Qt4Checker(LibWithHeaderChecker):
 				QT4_LUPDATE = lupdate,
 				QT4_LRELEASE = lrelease,
 			)
+		
+		# don't need emitter with qt4
+		env['BUILDERS']['Uic'].emitter = None
+		
 		return BaseLibChecker.configure(self, project, env)
 	
 	def check(self, project, conf):
@@ -134,7 +134,8 @@ class Qt4Checker(LibWithHeaderChecker):
 		Particular case. Allows to add things to environment after all libraries checks.
 		'''
 		if len(self.uiFiles):
-			uis = [env.Uic( ui ) for ui in self.uiFiles]
+			for ui in self.uiFiles:
+				env.Uic( ui )
 			if self.useLocalIncludes:
 				env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
 		return True

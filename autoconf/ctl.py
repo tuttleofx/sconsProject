@@ -3,7 +3,7 @@ from ilmbase import *
 
 ctl = LibWithHeaderChecker(
 		['IlmCtl', 'IlmCtlMath', 'IlmCtlSimd', ],
-		['IlmCtl/CtlSimdInterpreter.h','Iex.h'],
+		['CtlSimdInterpreter.h','Iex.h'],
 		'c++',
 		name='ctl',
 		call='Ctl::SimdInterpreter interp; interp.setMaxInstCount(10);',

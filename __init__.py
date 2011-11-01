@@ -30,7 +30,7 @@ def join_if_basedir_not_empty( *dirs ):
 	if not dirs or not dirs[0]:
 		return ''
 	return os.path.join(*dirs)
-	
+
 
 class SConsProject:
 	'''
@@ -106,7 +106,8 @@ class SConsProject:
                                                 'doxygen',
                                                 'unittest',
                                                 'qt',
-                                                ],
+                                                'cuda',
+                                                ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
 	def __init__(self):
@@ -275,21 +276,6 @@ class SConsProject:
 			return os.path.join(Dir('.').srcnode().abspath, relativePath)
 		else:
 			return Dir('.').srcnode().abspath
-
-	def getRealTopCwd(self, relativePath=None):
-		'''
-		Returns original current directory (not inside the VariantDir) or relativePath in original current directory.
-		Paths are relative to top.
-		'''
-		if isinstance(relativePath, list):
-			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
-		cdir = Dir('.').srcnode().abspath
-		if cdir.startswith(self.dir):
-			cdir = os.path.join('#', cdir[len(self.dir)+1:])
-		if relativePath:
-			return os.path.join(cdir, relativePath)
-		else:
-			return cdir
 
 	def getAbsoluteCwd(self, relativePath=None):
 		'''
@@ -623,12 +609,6 @@ class SConsProject:
 		The last function call at the end by the SConstruct.
 		'''
 
-		doxygen = self.env.Doxygen(self.inTopDir('doc/config/Doxyfile'))
-
-		self.env.Alias('doc', doxygen)
-		self.env.Alias('doxygen', doxygen)
-		self.env.Clean(doxygen, ['doc/html'])
-
 		def printInstalledFiles(target, source, env):
 			# Whatever it takes to build
 			for t in FindInstalledFiles():
@@ -647,9 +627,12 @@ class SConsProject:
 					print '\t', lib.error
 			sys.stdout.write(self.env['color_clear'])
 			if not self.env['ignore_errors']:
-				#raise 'BuildError', 'Configure errors... Compilation STOP !'
-				print 'Configure errors... Compilation STOP !'
-				print 'Use ignore_errors=1 to try to compile without correcting the problem.'
+				print ''' '''
+				print '''Configure errors... Can't start compilation!'''
+				print '''See config.log to check the problem details.'''
+				print ''' '''
+				print '''Use ignore_errors=1 to try to compile without fixing the problem. Maybe you can build a subpart of the project.'''
+				print ''' '''
 				Exit(1)
 			sys.stdout.write(self.env['color_clear'])
 
@@ -875,10 +858,11 @@ class SConsProject:
 		'''
 		for k, v in src.items():
 			if k in dst:
+				vlist = (v if isinstance(v, list) else [v])
 				if isinstance(dst[k], list):
-					dst[k] += v if isinstance(v, list) else [v]
+					dst[k].extend( vlist )
 				else:
-					dst[k] = dst[k] + (v if isinstance(v, list) else [v])
+					dst[k] = [dst[k]] + vlist
 			else:
 				dst[k] = v
 
@@ -950,8 +934,10 @@ class SConsProject:
 		if shared:
 			localEnv.AppendUnique( CCFLAGS = self.CC['sharedobject'] )
 			localEnv['OBJSUFFIX'] = '.os'
-			localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
-			localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
+			if 'SHCCFLAGS' in localEnv:
+				localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
+			if 'SHLINKFLAGS' in localEnv:
+				localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
 		
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
@@ -1090,6 +1076,45 @@ class SConsProject:
 
 		return dstInstall
 
+
+	def UnitTest( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
+	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+		'''
+		To create a program and expose it in the project to be simply used by other targets.
+		'''
+		sourcesFiles = []
+		sourcesFiles += sources
+		if dirs:
+			sourcesFiles += self.scanFiles( dirs, accept, reject )
+
+		if not sourcesFiles:
+			raise RuntimeError( "No source files for the target: " + target )
+		
+		localEnv = None
+		localLibraries = libraries
+		if env:
+			localEnv = env
+			self.appendLibsToEnv(localEnv, localLibraries)
+			if 'SconsProjectLibraries' in localEnv:
+				localLibraries += localEnv['SconsProjectLibraries']
+		else:
+			# if no environment we create a new one
+			localEnv = self.createEnv( localLibraries, name=target )
+
+		# apply arguments to env
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		if localEnvFlags:
+			localEnv.AppendUnique( **localEnvFlags )
+		if replaceLocalEnvFlags:
+			localEnv.Replace( **replaceLocalEnvFlags )
+		if globalEnvFlags:
+			localEnv.AppendUnique( **globalEnvFlags )
+
+		# create the target
+		dst = localEnv.UnitTest( target=target, source=sourcesFiles )
+
+		return dst
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
