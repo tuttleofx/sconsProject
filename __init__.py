@@ -95,19 +95,19 @@ class SConsProject:
 	dir_output_test   = 'undefined'               #
 	dir_sconsProject  = os.path.abspath(os.path.dirname(__file__)) # directory containing this file
 
-	compiler          = ""
+	compiler          = None
 	libs              = autoconf
 	commonLibs        = [libs.sconsProject]
 	libs_help         = [] # temporary list of librairies already added to help
 	libs_error        = [] # list of libraries with autoconf error
 	allLibsChecked    = [] # temporary list of librairies already checked
-	env               = Environment( tools=['default',
-                                                'packaging',
-                                                'doxygen',
-                                                'unittest',
-                                                'qt',
-                                                'cuda',
-                                                ] + (['msvs'] if windows else []),
+	env               = Environment( tools=[
+                                            'packaging',
+                                            'doxygen',
+                                            'unittest',
+                                            'qt',
+                                            'cuda',
+                                            ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
 	def __init__(self):
@@ -202,8 +202,10 @@ class SConsProject:
 		print ':: osname             = ' + self.osname
 		print ':: sysplatform        = ' + self.sysplatform
 		print ':: hostname           = ' + self.hostname
-		print ':: compiler c         = ' + self.env['CC'] + (' (' + self.env['CCVERSION'] + ')' if 'CCVERSION' in self.env and self.env['CCVERSION'] else '')
-		print ':: compiler c++       = ' + self.env['CXX'] + (' (' + self.env['CXXVERSION'] + ')' if 'CXXVERSION' in self.env and self.env['CXXVERSION'] else '')
+		ccversion = str(self.env['CCVERSION']) if 'CCVERSION' in self.env and self.env['CCVERSION'] else ''
+		print ':: compiler c         = ' + str(self.env['CC']) + ' (' + ccversion + ')'
+		cxxversion = str(self.env['CXXVERSION']) if ('CXXVERSION' in self.env) and (self.env['CXXVERSION']) else ''
+		print ':: compiler c++       = ' + str(self.env['CXX']) + ' (' + cxxversion + ')'
 		print ':: parallel jobs      = %d' % (GetOption('num_jobs'))
 		if self.env['ccache']:
 			print ':: ccachedir          = ' + self.env['ccachedir']
@@ -388,6 +390,7 @@ class SConsProject:
 		Read options from configuration files and at last from the command line
 		(which has the last word)
 		'''
+		# default values
 		if self.windows:
 			self.compiler    = compiler.visual
 		else:
@@ -411,6 +414,22 @@ class SConsProject:
 		else:
 			self.env['CCVERSION'] = self.compiler.version(self.env['CC'])
 			self.env['CXXVERSION'] = self.compiler.version(self.env['CXX'])
+		
+		# select the environment from user options
+		compilerName = self.env['compiler']
+		self.compiler   = eval( 'compiler.' + compilerName )
+		self.CC         = self.compiler.CC
+		if self.windows:
+			if compilerName == 'visual':
+				self.env.Tool('default')
+				self.env.Tool('msvc')
+			elif compilerName == 'gcc':
+				self.env.Tool('mingw')
+			else:
+				self.env.Tool('default')
+				print 'Error: Unrecognized compiler value on this platform. ('+str(compilerName)+')'
+		else:
+			self.env.Tool('default')
 
 	def createOptions(self, filename, args):
 		'''
@@ -485,7 +504,7 @@ class SConsProject:
 		opts.Add(BoolVariable('unix', 'operating system', self.unix))
 		opts.Add(BoolVariable('windows', 'operating system', self.windows))
 		opts.Add(BoolVariable('macos', 'operating system', self.macos))
-		opts.Add(BoolVariable('visualc', 'Compilator', self.windows))
+		opts.Add('compiler', 'Choose compiler mode. This defines all flag system to use.', 'visual' if self.windows else 'gcc')
 
 		opts.Add('EXTERNCPPPATH', 'Additional preprocessor paths (like CPPPATH but without dependencies check)', [])
 
@@ -579,10 +598,11 @@ class SConsProject:
 
 	def SConscript(self, dirs=[], exports=[]):
 		'''
-		To include SConscript from SConstruct, this automatically define variantdirs.
+		To include SConscript from SConstruct, this automatically defines variantdirs.
 		'''
 		if not dirs:
-			SConscript( self.inBuildDir(self.getAbsoluteCwd('SConscript')), exports=exports )
+			sconscriptFilename = self.inBuildDir(self.getAbsoluteCwd('SConscript'))
+			SConscript( sconscriptFilename, exports=exports )
 		else:
 			for d in dirs:
 				SConscript( dirs=self.inBuildDir(d), exports=exports )
