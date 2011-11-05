@@ -502,6 +502,7 @@ class SConsProject:
 		opts.Add('osname', 'OS name', 'windows' if self.windows else 'unix')
 		opts.Add('osbits', 'OS bits', self.bits)
 		opts.Add(BoolVariable('unix', 'operating system', self.unix))
+		opts.Add(BoolVariable('linux', 'operating system', self.linux))
 		opts.Add(BoolVariable('windows', 'operating system', self.windows))
 		opts.Add(BoolVariable('macos', 'operating system', self.macos))
 		opts.Add('compiler', 'Choose compiler mode. This defines all flag system to use.', 'visual' if self.windows else 'gcc')
