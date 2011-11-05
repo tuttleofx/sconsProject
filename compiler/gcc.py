@@ -70,7 +70,11 @@ if macos:
 else:
 	CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
 	CC['visibilityhidden'] = ['-fvisibility=hidden']
-CC['sharedobject'] = ['-fPIC']
+if windows:
+	# dont need to add fPIC because all code is position independant
+	CC['sharedobject'] = []
+else:
+	CC['sharedobject'] = ['-fPIC']
 
 CC['profile']   = ['-pg']
 CC['linkprofile']   = ['-pg']
