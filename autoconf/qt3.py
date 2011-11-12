@@ -33,7 +33,7 @@ class Qt3Checker(LibWithHeaderChecker):
 	'''
 	Qt3 checker
 	'''
-	countQt3 = 0
+	allUiFiles = []
 
 	def __init__( self,
 				  modules = [
@@ -45,19 +45,20 @@ class Qt3Checker(LibWithHeaderChecker):
 				  useLocalIncludes = True ):
 		self.name  = 'qt3'
 		self.libs = modules[:]
-		self.uiFiles = [File(f) for f in uiFiles]
-		#print 'qt3 uiFiles: ', uiFiles
-		self.defines = defines
+		self.uiFiles = self.getAbsoluteCwd(uiFiles)
+		self.defines = defines[:]
 		self.dependencies = [glew]
 		self.useLocalIncludes = useLocalIncludes
-		Qt3Checker.countQt3 += 1
-		self.id = self.countQt3
 		
 	def setModules(self, modules):
 		self.libs = modules[:]
 		
 	def declareUiFiles(self, uiFiles):
-		self.uiFiles.extend( [File(f) for f in uiFiles] )
+		self.uiFiles.extend( self.getAbsoluteCwd(uiFiles) )
+
+	def initEnv(self, project, env):
+		# use qt scons tool
+		env.Tool('qt')
 
 	def initOptions(self, project, opts):
 		LibWithHeaderChecker.initOptions(self, project, opts)
@@ -92,7 +93,7 @@ class Qt3Checker(LibWithHeaderChecker):
 	
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
-		result = self.CheckLibWithHeader( conf, self.libs, header=['qapplication.h'], language='c++' )
+		result = self.CheckLibWithHeader( conf, self.getLibs(conf.env), header=['qapplication.h'], language='c++' )
 		return result
 	
 	def postconfigure(self, project, env, level):
@@ -100,10 +101,13 @@ class Qt3Checker(LibWithHeaderChecker):
 		Add things for ui files after all libs check.
 		'''
 		if len(self.uiFiles):
-			if level == 0:
-				uis = [env.Uic( ui ) for ui in self.uiFiles]
+			for ui in self.uiFiles:
+				# do not redeclare a ui file
+				if ui not in Qt3Checker.allUiFiles:
+					env.Uic( ui )
+					Qt3Checker.allUiFiles.append( ui )
 			if self.useLocalIncludes:
-				env.AppendUnique( CPPPATH=subdirs([f.abspath for f in self.uiFiles]) )
+				env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
 		return True
 
 qt3 = Qt3Checker

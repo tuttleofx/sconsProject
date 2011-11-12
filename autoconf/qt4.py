@@ -61,16 +61,16 @@ class Qt4Checker(LibWithHeaderChecker):
 				  defines = ['QT_NO_KEYWORDS'],
 				  useLocalIncludes = True ):
 		self.name  = 'qt4'
-		self.libs = modules
-		self.uiFiles = uiFiles
-		self.defines = defines
+		self.libs = modules[:]
+		self.uiFiles =self.getAbsoluteCwd(uiFiles)
+		self.defines = defines[:]
 		self.useLocalIncludes = useLocalIncludes
 		
 	def setModules(self, modules):
-		self.libs = modules
+		self.libs = modules[:]
 		
 	def declareUiFiles(self, uiFiles):
-		self.uiFiles = uiFiles
+		self.uiFiles.extend( self.getAbsoluteCwd(uiFiles) )
 
 	def initEnv(self, project, env):
 		# use qt scons tool
@@ -136,15 +136,14 @@ class Qt4Checker(LibWithHeaderChecker):
 	
 	def postconfigure(self, project, env, level):
 		'''
-		Particular case. Allows to add things to environment after all libraries checks.
+		Add things for ui files after all libs check.
 		'''
 		if len(self.uiFiles):
 			for ui in self.uiFiles:
-				fullUi = project.getRealAbsoluteCwd(ui)
 				# do not redeclare a ui file
-				if fullUi not in Qt4Checker.allUiFiles:
-					env.Uic( project.getAbsoluteCwd(ui) )
-					Qt4Checker.allUiFiles.append( fullUi )
+				if ui not in Qt4Checker.allUiFiles:
+					env.Uic( ui )
+					Qt4Checker.allUiFiles.append( ui )
 			if self.useLocalIncludes:
 				env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
 		return True
