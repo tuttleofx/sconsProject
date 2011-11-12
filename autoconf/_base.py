@@ -40,6 +40,12 @@ class BaseLibChecker(object):
 			return env['with_'+self.name]
 		return False
 
+	def initEnv(self, project, env):
+		'''
+		Init environment.
+		'''
+		pass
+
 	def initOption_with(self, project, opts):
 		'''
 		Init options for enable/disable or configure the library.
@@ -101,7 +107,7 @@ class BaseLibChecker(object):
 		if 'fwkdir_'+self.name not in env:
 			return False
 		return env['fwkdir_'+self.name] != None
-	
+
 	def getLibs(self, env):
 		return env['lib_'+self.name]
 

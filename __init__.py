@@ -105,8 +105,6 @@ class SConsProject:
                                             'packaging',
                                             'doxygen',
                                             'unittest',
-                                            'qt',
-                                            'cuda',
                                             ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
@@ -750,6 +748,9 @@ class SConsProject:
 		opts_current.Update(env)
 		self.applyOptionsOnEnv(env)
 
+		for lib, level in allLibs:
+			lib.initEnv(self, env)
+
 		if self.needConfigure():
 			for lib, level in allLibs:
 				if not lib.enabled(env):
@@ -817,6 +818,9 @@ class SConsProject:
 		check_opts.Update(check_env)
 		self.applyOptionsOnEnv(check_env)
 
+		for a, level in dependencies:
+			a.initEnv(self, check_env)
+		lib.initEnv(self, check_env)
 		for a, level in dependencies:
 			a.configure(self, check_env)
 		if not lib.configure(self, check_env):
