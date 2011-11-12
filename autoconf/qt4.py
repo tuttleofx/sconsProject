@@ -143,7 +143,7 @@ class Qt4Checker(LibWithHeaderChecker):
 				fullUi = project.getRealAbsoluteCwd(ui)
 				# do not redeclare a ui file
 				if fullUi not in Qt4Checker.allUiFiles:
-					env.Uic( fullUi )
+					env.Uic( project.getAbsoluteCwd(ui) )
 					Qt4Checker.allUiFiles.append( fullUi )
 			if self.useLocalIncludes:
 				env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
