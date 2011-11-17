@@ -128,9 +128,12 @@ class SConsProject:
 			else:
 				self.bits = 64
 
-		sconf = ['display',
-		         'default',
-		         'local' ]
+		sconf = [
+			'display',
+			'default',
+			'local',
+			'host',
+			]
 		if self.unix:
 			sconf.append( 'unix' )
 			sconf.append( 'unix-'+str(self.bits) )
