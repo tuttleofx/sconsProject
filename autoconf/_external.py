@@ -85,4 +85,19 @@ class HeaderChecker(BaseLibChecker):
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		return result
 
+class ObjectChecker(BaseLibChecker):
+
+        def __init__(self, name, dependencies=[], defines=[]):
+                self.name = name
+                self.dependencies = dependencies
+                self.defines = defines
+
+        def initOptions(self, project, opts):
+                BaseLibChecker.initOption_with(self, project, opts)
+                return True
+
+        def check(self, project, conf):
+                conf.env.AppendUnique( CPPDEFINES = self.defines )
+                return True
+
 
