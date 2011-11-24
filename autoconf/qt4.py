@@ -36,40 +36,45 @@ class Qt4Checker(LibWithHeaderChecker):
 	'''
 	Qt4 checker
 	'''
+	allUiFiles = []
 
 	def __init__( self,
 				  modules = [
 					  'QtCore',
 					  'QtGui',
 					  'QtOpenGL',
-#				'QtAssistant',
-#				'QtScript',
-#				'QtDBus',
-#				'QtSql',
-#				'QtNetwork',
-#				'QtSvg',
-#				'QtTest',
-#				'QtXml',
-#				'QtUiTools',
-#				'QtDesigner',
-#				'QtDesignerComponents',
-#				'QtWebKit'
-#				'Qt3Support',
-				],
+#					'QtAssistant',
+#					'QtScript',
+#					'QtDBus',
+#					'QtSql',
+#					'QtNetwork',
+#					'QtSvg',
+#					'QtTest',
+#					'QtXml',
+#					'QtUiTools',
+#					'QtDesigner',
+#					'QtDesignerComponents',
+#					'QtWebKit'
+#					'Qt3Support',
+					],
 				  uiFiles = [],
 				  defines = ['QT_NO_KEYWORDS'],
 				  useLocalIncludes = True ):
 		self.name  = 'qt4'
-		self.libs = modules
-		self.uiFiles = uiFiles
-		self.defines = defines
+		self.libs = modules[:]
+		self.uiFiles =self.getAbsoluteCwd(uiFiles)
+		self.defines = defines[:]
 		self.useLocalIncludes = useLocalIncludes
 		
 	def setModules(self, modules):
-		self.libs = modules
+		self.libs = modules[:]
 		
 	def declareUiFiles(self, uiFiles):
-		self.uiFiles = uiFiles
+		self.uiFiles.extend( self.getAbsoluteCwd(uiFiles) )
+
+	def initEnv(self, project, env):
+		# use qt scons tool
+		env.Tool('qt')
 
 	def initOptions(self, project, opts):
 		LibWithHeaderChecker.initOptions(self, project, opts)
@@ -122,7 +127,7 @@ class Qt4Checker(LibWithHeaderChecker):
 	def check(self, project, conf):
 		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = True
-		for mod in self.libs:
+		for mod in self.getLibs(conf.env):
 			r = self.CheckLibWithHeader( conf, [mod], header=[mod+'/'+mod], language='c++' )
 			if not r:
 				print 'error: ',mod
@@ -131,11 +136,14 @@ class Qt4Checker(LibWithHeaderChecker):
 	
 	def postconfigure(self, project, env, level):
 		'''
-		Particular case. Allows to add things to environment after all libraries checks.
+		Add things for ui files after all libs check.
 		'''
 		if len(self.uiFiles):
 			for ui in self.uiFiles:
-				env.Uic( ui )
+				# do not redeclare a ui file
+				if ui not in Qt4Checker.allUiFiles:
+					env.Uic( ui )
+					Qt4Checker.allUiFiles.append( ui )
 			if self.useLocalIncludes:
 				env.AppendUnique( CPPPATH=subdirs(self.uiFiles) )
 		return True

@@ -105,8 +105,6 @@ class SConsProject:
                                             'packaging',
                                             'doxygen',
                                             'unittest',
-                                            'qt',
-                                            'cuda',
                                             ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
 
@@ -130,9 +128,12 @@ class SConsProject:
 			else:
 				self.bits = 64
 
-		sconf = ['display',
-		         'default',
-		         'local' ]
+		sconf = [
+			'display',
+			'default',
+			'local',
+			'host',
+			]
 		if self.unix:
 			sconf.append( 'unix' )
 			sconf.append( 'unix-'+str(self.bits) )
@@ -270,14 +271,15 @@ class SConsProject:
 		'''
 		if isinstance(relativePath, list):
 			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
+		cdir = Dir('.').srcnode().abspath
 		if relativePath:
 			if relativePath.startswith('#'):
 				return os.path.join(self.dir, relativePath[1:])
 			elif os.path.isabs(relativePath):
 				return relativePath
-			return os.path.join(Dir('.').srcnode().abspath, relativePath)
+			return os.path.join(cdir, relativePath)
 		else:
-			return Dir('.').srcnode().abspath
+			return cdir
 
 	def getAbsoluteCwd(self, relativePath=None):
 		'''
@@ -288,6 +290,10 @@ class SConsProject:
 			return [self.getAbsoluteCwd(rp) for rp in relativePath]
 		cdir = Dir('.').abspath
 		if relativePath:
+			if relativePath.startswith('#'):
+				return os.path.join(self.dir_output_build, relativePath[1:])
+			elif os.path.isabs(relativePath):
+				return relativePath
 			return os.path.join(cdir, relativePath)
 		else:
 			return cdir
@@ -320,8 +326,15 @@ class SConsProject:
 	def inBuildDir(self, * dirs):
 		'''Returns "dirs" as subdirectories of temporary "buildDir".'''
 		if not dirs:
-			return string.replace(os.getcwd(), self.dir, self.dir_output_build)
-		return [string.replace(d, self.dir, self.dir_output_build) for d in dirs]
+			return string.replace(os.getcwd(), self.dir, self.dir_output_build, 1)
+		res = []
+		for d in SCons.Util.flatten(dirs):
+			if not d.startswith(self.dir_output_build):
+				dr = string.replace(d, self.dir, self.dir_output_build, 1)
+				res.append( dr )
+			else:
+				res.append( d )
+		return res
 
 	def inTopDir(self, * dirs):
 		'''Returns "dirs" as subdirectories of "topDir".'''
@@ -750,6 +763,9 @@ class SConsProject:
 		opts_current.Update(env)
 		self.applyOptionsOnEnv(env)
 
+		for lib, level in allLibs:
+			lib.initEnv(self, env)
+
 		if self.needConfigure():
 			for lib, level in allLibs:
 				if not lib.enabled(env):
@@ -817,6 +833,9 @@ class SConsProject:
 		check_opts.Update(check_env)
 		self.applyOptionsOnEnv(check_env)
 
+		for a, level in dependencies:
+			a.initEnv(self, check_env)
+		lib.initEnv(self, check_env)
 		for a, level in dependencies:
 			a.configure(self, check_env)
 		if not lib.configure(self, check_env):
@@ -930,7 +949,7 @@ class SConsProject:
 		sourcesFiles = []
 		sourcesFiles += l_sources
 		if l_dirs:
-			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -962,7 +981,9 @@ class SConsProject:
 		
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
-
+		
+		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
+		
 		# create the target
 		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
 
@@ -999,7 +1020,7 @@ class SConsProject:
 		sourcesFiles = []
 		sourcesFiles += l_sources
 		if l_dirs:
-			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -1027,6 +1048,8 @@ class SConsProject:
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
 
+		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
+		
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
 
@@ -1063,7 +1086,7 @@ class SConsProject:
 		sourcesFiles = []
 		sourcesFiles += l_sources
 		if l_dirs:
-			sourcesFiles += self.scanFiles( l_dirs, accept, reject )
+			sourcesFiles += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -1088,6 +1111,8 @@ class SConsProject:
 		if globalEnvFlags:
 			localEnv.AppendUnique( **globalEnvFlags )
 
+		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
+		
 		# create the target
 		dst = localEnv.Program( target=target, source=sourcesFiles )
 
@@ -1107,7 +1132,7 @@ class SConsProject:
 		sourcesFiles = []
 		sourcesFiles += sources
 		if dirs:
-			sourcesFiles += self.scanFiles( dirs, accept, reject )
+			sourcesFiles += self.scanFiles( dirs, accept, reject, inBuildDir=True )
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
@@ -1156,7 +1181,7 @@ class SConsProject:
 		seen = set()
 		return [x for x in seq if x not in seen and not seen.add(x)]
 
-	def scanFilesInDir(self, directory, accept, reject, recursive=True):
+	def scanFilesInDir(self, directory, accept, reject, recursive=True, inBuildDir=False):
 		'''
 		Recursively search files in 'directory' that matches 'accepts' wildcards and doesn't contain 'reject'
 		'''
@@ -1165,10 +1190,9 @@ class SConsProject:
 		sources = []
 		realcwd = self.getRealAbsoluteCwd()
 		paths = []
-		if recursive:
-			paths = self.recursiveDirs( self.getRealAbsoluteCwd(directory) )
-		else:
-			paths = self.getRealAbsoluteCwd(directory)
+		dd = self.getRealAbsoluteCwd(directory)
+		paths = self.recursiveDirs( dd ) if recursive else dd
+		
 		for path in paths:
 			for pattern in l_accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
@@ -1176,10 +1200,10 @@ class SConsProject:
 			sources = filter((lambda a: a.rfind(pattern) == -1), sources)
 		# to relative paths (to allow scons variant_dir to recognize files...)
 		def toLocalDirs(d): return d.replace(realcwd + os.sep, '')
-		lsources = map(toLocalDirs, sources)
+		lsources = self.inBuildDir(sources) if inBuildDir else map(toLocalDirs, sources)
 		return self.unique(lsources)
 
-	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], unique=True, recursive=True):
+	def scanFiles(self, dirs=['.'], accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], unique=True, recursive=True, inBuildDir=False):
 		'''
 		Recursively search files in "dirs" that matches 'accepts' wildcards and don't contains "reject"
 		@param[in] unique Uniquify the list of files
@@ -1187,7 +1211,7 @@ class SConsProject:
 		l_dirs = self.asList( dirs )
 		files = []
 		for d in l_dirs:
-			files += self.scanFilesInDir(d, accept, reject, recursive)
+			files += self.scanFilesInDir(d, accept, reject, recursive, inBuildDir)
 		if not unique:
 			return files
 		return self.unique(files)
@@ -1198,11 +1222,11 @@ class SConsProject:
 		dirs.sort()
 		return dirs
 
-	def subdirsContaining(self, dir, patterns):
+	def subdirsContaining(self, directory, patterns):
 		'''
-		Returns all sub directories of 'dir' containing a file matching 'patterns'.
+		Returns all sub directories of 'directory' containing a file matching 'patterns'.
 		'''
-		dirs = self.dirnames(self.scanFiles(dir, accept=patterns))
+		dirs = self.dirnames(self.scanFiles(directory, accept=patterns))
 		dirs.sort()
 		return dirs
 

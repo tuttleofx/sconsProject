@@ -129,7 +129,7 @@ class _Automoc(object):
 		# make a deep copy for the result; MocH objects will be appended
 		out_sources = source[:]
 
-		for obj in source:
+		for obj in SCons.Util.flatten(source):
 			if not obj.has_builder():
 				# binary obj file provided
 				if debug:

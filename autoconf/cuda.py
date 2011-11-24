@@ -23,6 +23,9 @@ class CudaChecker(LibWithHeaderChecker):
 		opts.Add( 'bindir_'+self.name,   'Base directory for '+self.name, '${_join_if_basedir_not_empty( dir_'+self.name+ ', "bin" )}' )
 		return True
 
+	def initEnv(self, project, env):
+		env.Tool('cuda')
+
 	def configure(self, project, env):
 		#bindir = '$bindir_'+self.name
 		#nvcc = locateCommand(env, 'nvcc', bindir)

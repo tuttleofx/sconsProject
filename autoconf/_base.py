@@ -1,5 +1,6 @@
 from SCons import Variables
 from SCons import Environment
+from SCons import Node
 
 from operator import add
 
@@ -39,6 +40,12 @@ class BaseLibChecker(object):
 		if option in env :
 			return env['with_'+self.name]
 		return False
+
+	def initEnv(self, project, env):
+		'''
+		Init environment.
+		'''
+		pass
 
 	def initOption_with(self, project, opts):
 		'''
@@ -101,7 +108,7 @@ class BaseLibChecker(object):
 		if 'fwkdir_'+self.name not in env:
 			return False
 		return env['fwkdir_'+self.name] != None
-	
+
 	def getLibs(self, env):
 		return env['lib_'+self.name]
 
@@ -162,4 +169,23 @@ class BaseLibChecker(object):
 		else:
 			#print 'no CheckHeader', self.name
 			return True
+			
+	
+	## some utility functions ##
+	
+	def getAbsoluteCwd(self, relativePath=None):
+		'''
+		Returns current directory or relativePath in current directory.
+		Paths are absolute.
+		'''
+		if isinstance(relativePath, list):
+			return [self.getAbsoluteCwd(rp) for rp in relativePath]
+		fs = Node.FS.get_default_fs()
+		cdir = fs.Dir('.').abspath
+		if relativePath:
+			return os.path.join(cdir, relativePath)
+		else:
+			return cdir
+
+
 
