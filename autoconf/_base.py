@@ -62,6 +62,9 @@ class BaseLibChecker(object):
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
 		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, '' )
+		opts.Add( 'flag_'+self.name, 'Compiler flags.', [] )
+		opts.Add( 'cppflag_'+self.name, 'Compiler flags.', [] )
+		opts.Add( 'linkflag_'+self.name, 'Compiler flags.', [] )
 		return True
 
 	def configure(self, project, env):
@@ -86,6 +89,16 @@ class BaseLibChecker(object):
 					fwkFlags = ['-F'+f for f in fwkdirs]
 					env.Append( LINKFLAGS=fwkFlags )
 					env.Append( CCFLAGS=fwkFlags )
+
+		if self.enabled(env,'flag_'+self.name):
+			env.AppendUnique( CPPFLAGS=env['flag_'+self.name] )
+			env.AppendUnique( LINKFLAGS=env['flag_'+self.name] )
+
+		if self.enabled(env,'cppflag_'+self.name):
+			env.AppendUnique( CPPFLAGS=env['cppflag_'+self.name] )
+
+		if self.enabled(env,'linkflag_'+self.name):
+			env.AppendUnique( LINKFLAGS=env['linkflag_'+self.name] )
 
 		return True
 
