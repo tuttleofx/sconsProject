@@ -358,7 +358,7 @@ class SConsProject:
 		if not dirs:
 			return self.dir_output_lib
 		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inOutputLib(), d)
+			return os.path.join( self.inOutputLib(), dirs[0] )
 		l_dirs = SCons.Util.flatten(dirs)
 		return [ self.inOutputLib(d) for d in l_dirs ]
 
@@ -367,7 +367,7 @@ class SConsProject:
 		if not dirs:
 			return self.dir_output_header
 		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inOutputHeaders(), d)
+			return os.path.join( self.inOutputHeaders(), dirs[0] )
 		l_dirs = SCons.Util.flatten(dirs)
 		return [ self.inOutputHeaders(d) for d in l_dirs ]
 
@@ -376,7 +376,7 @@ class SConsProject:
 		if not dirs:
 			return self.dir_output_bin
 		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inOutputBin(), d)
+			return os.path.join( self.inOutputBin(), dirs[0] )
 		l_dirs = SCons.Util.flatten(dirs)
 		return [ self.inOutputBin(d) for d in l_dirs ]
 
@@ -385,7 +385,7 @@ class SConsProject:
 		if not dirs:
 			return self.dir_output_test
 		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inOutputTest(), d)
+			return os.path.join( self.inOutputTest(), dirs[0] )
 		l_dirs = SCons.Util.flatten(dirs)
 		return [ self.inOutputTest(d) for d in l_dirs ]
 
