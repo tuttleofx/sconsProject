@@ -238,7 +238,6 @@ class SConsProject:
 		Paths are absolute.
 		Returns a list.
 		'''
-		#print str(dir( Dir('#') ))
 		if isinstance(relativePath, list):
 			alldirs = []
 			for rp in relativePath:
@@ -327,51 +326,68 @@ class SConsProject:
 		'''Returns "dirs" as subdirectories of temporary "buildDir".'''
 		if not dirs:
 			return string.replace(os.getcwd(), self.dir, self.dir_output_build, 1)
-		res = []
-		for d in SCons.Util.flatten(dirs):
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			d = dirs[0]
 			if not d.startswith(self.dir_output_build):
-				dr = string.replace(d, self.dir, self.dir_output_build, 1)
-				res.append( dr )
+				return string.replace(d, self.dir, self.dir_output_build, 1)
 			else:
-				res.append( d )
-		return res
+				return d
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inBuildDir(d) for d in l_dirs ]
 
 	def inTopDir(self, * dirs):
 		'''Returns "dirs" as subdirectories of "topDir".'''
-		basedir = self.dir + os.sep
 		if not dirs:
-			return basedir
-		return [basedir + d for d in dirs]
+			return self.dir
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join(self.inTopDir(), dirs[0])
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ inTopDir(d) for d in l_dirs ]
 
 	def inOutputDir(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputDir".'''
 		if not dirs:
 			return self.dir_output
-		return [ os.path.join( self.inOutputDir(), d ) for d in dirs ]
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join( self.inOutputDir(), dirs[0] )
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputDir(d) for d in l_dirs ]
 
 	def inOutputLib(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputLib".'''
 		if not dirs:
 			return self.dir_output_lib
-		return [ os.path.join( self.inOutputLib(), d ) for d in dirs ]
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join(self.inOutputLib(), d)
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputLib(d) for d in l_dirs ]
 
 	def inOutputHeaders(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputHeaders".'''
 		if not dirs:
 			return self.dir_output_header
-		return [ os.path.join( self.inOutputHeaders(), d ) for d in dirs ]
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join(self.inOutputHeaders(), d)
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputHeaders(d) for d in l_dirs ]
 
 	def inOutputBin(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputBin".'''
 		if not dirs:
 			return self.dir_output_bin
-		return [ os.path.join( self.inOutputBin(), d ) for d in dirs ]
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join(self.inOutputBin(), d)
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputBin(d) for d in l_dirs ]
 
 	def inOutputTest(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputTest".'''
 		if not dirs:
 			return self.dir_output_test
-		return [ os.path.join( self.inOutputTest(), d ) for d in dirs ]
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join(self.inOutputTest(), d)
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputTest(d) for d in l_dirs ]
 
 	def getName(self, n=1):
 		'''Create a name using the current directory. "n" is the number of parents to build the name.'''
@@ -906,16 +922,9 @@ class SConsProject:
 			else:
 				dst[k] = v
 
-	def prepareIncludes(self, dirs):		
-		#print 'dirs+includes:', dirs+includes
-		#print 'self.unique(self.getAllAbsoluteCwd(dirs+includes)):', self.unique(self.getAllAbsoluteCwd(dirs+includes))
+	def prepareIncludes(self, dirs):
 		objDirs = [Dir(d) for d in self.getAllAbsoluteCwd(dirs)]
-		#print 'objDirs:', str(objDirs)
-		#oldObjDirs = objDirs
 		objDirs = self.unique(objDirs)
-		#if len(oldObjDirs) != len(objDirs):
-		#	print '--prepareIncludes--'*100
-		#	print len(oldObjDirs), ' -- ', len(objDirs)
 		return objDirs
 
 	def ObjectLibrary( self, target, libraries=[], includes=[], envFlags={}, sources=[] ):
@@ -926,7 +935,7 @@ class SConsProject:
 		l_libraries = self.asList(libraries)
 		l_includes = self.asList(includes)
 		l_sources = self.asList(sources)
-		unusedLocalEnv = self.createEnv( libraries, name=target )
+		unusedLocalEnv = self.createEnv( l_libraries, name=target )
 		# expose this library
 		dstLibChecker = autoconf._internal.InternalLibChecker( name=target, includes=self.prepareIncludes(l_includes), envFlags=envFlags, dependencies=l_libraries, addSources=self.getRealAbsoluteCwd(l_sources) )
 
@@ -956,8 +965,8 @@ class SConsProject:
 
 		localEnv = None
 		if env:
-			localEnv = env
-			self.appendLibsToEnv(localEnv, libraries)
+			localEnv = env.Clone()
+			self.appendLibsToEnv(localEnv, l_libraries)
 		else:
 			# if no environment we create a new one
 			localEnv = self.createEnv( libraries, name=target )
@@ -1026,9 +1035,9 @@ class SConsProject:
 			raise RuntimeError( "No source files for the target: " + target )
 		
 		localEnv = None
-		localLibraries = libraries
+		localLibraries = l_libraries
 		if env:
-			localEnv = env
+			localEnv = env.Clone()
 			self.appendLibsToEnv(localEnv, localLibraries)
 			if 'SconsProjectLibraries' in localEnv:
 				localLibraries += localEnv['SconsProjectLibraries']
@@ -1092,9 +1101,9 @@ class SConsProject:
 			raise RuntimeError( "No source files for the target: " + target )
 		
 		localEnv = None
-		localLibraries = libraries
+		localLibraries = l_libraries
 		if env:
-			localEnv = env
+			localEnv = env.Clone()
 			self.appendLibsToEnv(localEnv, localLibraries)
 			if 'SconsProjectLibraries' in localEnv:
 				localLibraries += localEnv['SconsProjectLibraries']
@@ -1129,18 +1138,21 @@ class SConsProject:
 		'''
 		To create a program and expose it in the project to be simply used by other targets.
 		'''
-		sourcesFiles = []
-		sourcesFiles += sources
-		if dirs:
-			sourcesFiles += self.scanFiles( dirs, accept, reject, inBuildDir=True )
+		l_sources = self.asList(sources)
+		l_dirs = self.asList(dirs)
+		l_libraries = self.asList(libraries)
+		l_includes = self.asList(includes)
 
-		if not sourcesFiles:
-			raise RuntimeError( "No source files for the target: " + target )
+		if l_dirs:
+			l_sources += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
+
+		if not l_sources:
+			raise RuntimeError( 'No source files for the target: ' + target )
 		
 		localEnv = None
-		localLibraries = libraries
+		localLibraries = l_libraries
 		if env:
-			localEnv = env
+			localEnv = env.Clone()
 			self.appendLibsToEnv(localEnv, localLibraries)
 			if 'SconsProjectLibraries' in localEnv:
 				localLibraries += localEnv['SconsProjectLibraries']
@@ -1149,7 +1161,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(dirs+includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
@@ -1158,7 +1170,7 @@ class SConsProject:
 			localEnv.AppendUnique( **globalEnvFlags )
 
 		# create the target
-		dst = localEnv.UnitTest( target=target, source=sourcesFiles )
+		dst = localEnv.UnitTest( target=target, source=l_sources )
 
 		return dst
 
@@ -1166,7 +1178,7 @@ class SConsProject:
 	def asList(self, v):
 		'''Return v inside a list if not a list.'''
 		if isinstance(v, list):
-			return v
+			return v[:]
 		return [v]
 
 	def recursiveDirs(self, root):

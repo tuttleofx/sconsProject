@@ -34,7 +34,7 @@ def UnitTest(env, source, **kwargs):
 		target = [kwargs['target']]
 	target.insert( 0, 'unittest' )
 	
-	test = env.Program(source=source, target='-'.join( target ) )
+	test = env.Program( target='-'.join( target ), source=source )
 	
 	unittest = env.Test( test[0].abspath+'.unittest_passed', test )
 	
