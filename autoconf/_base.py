@@ -14,7 +14,7 @@ unix = not windows
 def asList(v):
 	'''Return v inside a list if not a list.'''
 	if isinstance(v, list):
-		return v
+		return v[:]
 	return [v]
 
 class BaseLibChecker(object):
@@ -25,13 +25,18 @@ class BaseLibChecker(object):
 	error        = ''
 	name         = 'name-empty'
 	language     = 'c'
+	version      = ''
 	dependencies = []
-	checkDone    = False
 	libs = []
+	defines = []
+	flags = []
+	cppflags = []
+	linkflags = []
+	checkDone    = False
 	sconsNode = None # specific to internal libraries, None by default
 
 
-	def enabled(self,env,option=None):
+	def enabled( self, env, option=None ):
 		'''
 		Return if "option" is in the environment. If "option" is None return if the current library is enabled.
 		'''
@@ -62,9 +67,11 @@ class BaseLibChecker(object):
 		if macos:
 			opts.Add( 'fwkdir_'+self.name, 'Framework directory for '+self.name,     None )
 		opts.Add( 'dir_'+self.name,   'Base directory for '+self.name, '' )
-		opts.Add( 'flag_'+self.name, 'Compiler flags.', [] )
-		opts.Add( 'cppflag_'+self.name, 'Compiler flags.', [] )
-		opts.Add( 'linkflag_'+self.name, 'Compiler flags.', [] )
+		opts.Add( 'flags_'+self.name, 'Add flags for compiler and linker.', self.flags )
+		opts.Add( 'cppflags_'+self.name, 'Add compiler flags.', self.cppflags )
+		opts.Add( 'linkflags_'+self.name, 'Add linker flags.', self.linkflags )
+		opts.Add( 'defines_'+self.name, 'Add some defines to configure the library.', self.defines )
+		opts.Add( 'version_'+self.name, 'Library version number as string.', self.version )
 		return True
 
 	def configure(self, project, env):
@@ -90,15 +97,18 @@ class BaseLibChecker(object):
 					env.Append( LINKFLAGS=fwkFlags )
 					env.Append( CCFLAGS=fwkFlags )
 
-		if self.enabled(env,'flag_'+self.name):
-			env.AppendUnique( CPPFLAGS=env['flag_'+self.name] )
-			env.AppendUnique( LINKFLAGS=env['flag_'+self.name] )
+		if self.enabled(env,'flags_'+self.name):
+			env.AppendUnique( CPPFLAGS=env['flags_'+self.name] )
+			env.AppendUnique( LINKFLAGS=env['flags_'+self.name] )
 
-		if self.enabled(env,'cppflag_'+self.name):
-			env.AppendUnique( CPPFLAGS=env['cppflag_'+self.name] )
+		if self.enabled(env,'cppflags_'+self.name):
+			env.AppendUnique( CPPFLAGS=env['cppflags_'+self.name] )
 
-		if self.enabled(env,'linkflag_'+self.name):
-			env.AppendUnique( LINKFLAGS=env['linkflag_'+self.name] )
+		if self.enabled(env,'linkflags_'+self.name):
+			env.AppendUnique( LINKFLAGS=env['linkflags_'+self.name] )
+
+		if self.enabled(env,'defines_'+self.name):
+			env.AppendUnique( CPPDEFINES=env['defines_'+self.name] )
 
 		return True
 

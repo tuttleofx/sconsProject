@@ -2,7 +2,7 @@ from _base import *
 
 class LibWithHeaderChecker(BaseLibChecker):
 
-	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], defines=[] ):
+	def __init__(self, libs, header, language, name=None, call=None, dependencies=[], version='', defines=[], flags=[], cppflags=[], linkflags=[] ):
 		self.libs = asList(libs)
 		#print 'name:', name
 		#print 'libs:', self.libs
@@ -16,8 +16,12 @@ class LibWithHeaderChecker(BaseLibChecker):
 				self.name = libs
 		else:
 			self.name = name
-		self.dependencies = list(dependencies)
-		self.defines = list(defines)
+		self.dependencies = asList(dependencies)
+		self.version = str(version)
+		self.defines = asList(defines)
+		self.flags = asList(flags)
+		self.cppflags = asList(cppflags)
+		self.linkflags = asList(linkflags)
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
@@ -26,14 +30,13 @@ class LibWithHeaderChecker(BaseLibChecker):
 		return True
 
 	def check(self, project, conf):
-		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLibWithHeader( conf, self.getLibs(conf.env), self.header, self.language, call=self.call )
 		return result
 
 
 class LibChecker(BaseLibChecker):
 
-	def __init__(self, libs, name=None, dependencies=[], defines=[] ):
+	def __init__(self, libs, name=None, dependencies=[], version='', defines=[], flags=[], cppflags=[], linkflags=[] ):
 		if not name:
 			if isinstance(libs, list):
 				self.name = libs[0]
@@ -42,8 +45,12 @@ class LibChecker(BaseLibChecker):
 		else:
 			self.name = name
 		self.libs = asList(libs)
-		self.dependencies = dependencies
-		self.defines = defines
+		self.dependencies = asList(dependencies)
+		self.version = str(version)
+		self.defines = asList(defines)
+		self.flags = asList(flags)
+		self.cppflags = asList(cppflags)
+		self.linkflags = asList(linkflags)
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
@@ -52,20 +59,22 @@ class LibChecker(BaseLibChecker):
 		return True
 
 	def check(self, project, conf):
-		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckLib( conf, self.getLibs(conf.env) )
 		return result
 
 
 class HeaderChecker(BaseLibChecker):
 
-	def __init__(self, name, header, language, dependencies=[], libs=[], defines=[]):
+	def __init__( self, name, header, language, dependencies=[], version='', libs=[], defines=[], flags=[], cppflags=[], linkflags=[] ):
 		self.name = name
 		self.header   = header
 		self.language = language
-		self.dependencies = dependencies
-		self.defines = defines
-		self.libs = asList(libs)
+		self.dependencies = asList(dependencies)
+		self.version = str(version)
+		self.defines = asList(defines)
+		self.flags = asList(flags)
+		self.cppflags = asList(cppflags)
+		self.linkflags = asList(linkflags)
 
 	def initOptions(self, project, opts):
 		BaseLibChecker.initOptions(self, project, opts)
@@ -81,23 +90,25 @@ class HeaderChecker(BaseLibChecker):
 		return True
 
 	def check(self, project, conf):
-		conf.env.AppendUnique( CPPDEFINES = self.defines )
 		result = self.CheckHeader( conf, self.header, language=self.language )
 		return result
 
 class ObjectChecker(BaseLibChecker):
 
-        def __init__(self, name, dependencies=[], defines=[]):
-                self.name = name
-                self.dependencies = dependencies
-                self.defines = defines
+	def __init__( self, name, dependencies=[], version='', defines=[], flags=[], cppflags=[], linkflags=[] ):
+		self.name = name
+		self.dependencies = asList(dependencies)
+		self.version = str(version)
+		self.defines = asList(defines)
+		self.flags = asList(flags)
+		self.cppflags = asList(cppflags)
+		self.linkflags = asList(linkflags)
 
-        def initOptions(self, project, opts):
-                BaseLibChecker.initOption_with(self, project, opts)
-                return True
+	def initOptions(self, project, opts):
+		BaseLibChecker.initOption_with(self, project, opts)
+		return True
 
-        def check(self, project, conf):
-                conf.env.AppendUnique( CPPDEFINES = self.defines )
-                return True
+	def check(self, project, conf):
+		return True
 
 
