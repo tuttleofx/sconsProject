@@ -10,6 +10,9 @@ CC = {}
 CC['define']   = '/D'
 CC['exceptionsEnabled'] = '/EHsc' #'/GX'
 
+CC['multithreadedlib'] = '/MD'
+CC['singlethreadedlib'] = '/ML'
+
 CC['optimize']   =['/O2','/Ox','/GA','/GL']
 CC['nooptimize'] =['/Od']
 # /O2            Creates fast code
