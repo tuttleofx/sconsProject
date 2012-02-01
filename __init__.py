@@ -944,7 +944,7 @@ class SConsProject:
 
 		return dstLibChecker
 
-	def StaticLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	def StaticLibrary( self, target, sources=[], precsrc='', precinc='', dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'], shared=False ):
 		'''
@@ -992,7 +992,13 @@ class SConsProject:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
 		
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
-		
+
+		#adding precompiled headers
+		if precinc:
+			localEnv['PCHSTOP'] = self.dir + '/' + precinc
+			localEnv.Append( CPPFLAGS = [ '/FI' + self.dir + '/' + precinc, '/Zm135' ] )
+			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
+
 		# create the target
 		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
 
@@ -1016,7 +1022,7 @@ class SConsProject:
 
 		return dstLibInstall
 
-	def SharedLibrary( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	def SharedLibrary( self, target, sources=[], precsrc='', precinc='', dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''
@@ -1059,6 +1065,12 @@ class SConsProject:
 
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
 		
+		#adding precompiled headers
+		if precinc:
+			localEnv['PCHSTOP'] = self.dir + '/' + precinc
+			localEnv.Append( CPPFLAGS = [ '/FI' + self.dir + '/' + precinc, '/Zm135' ] )
+			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
+
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
 
@@ -1244,4 +1256,3 @@ class SConsProject:
 
 
 __all__ = ['SConsProject']
-
