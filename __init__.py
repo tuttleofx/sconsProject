@@ -995,8 +995,8 @@ class SConsProject:
 
 		#adding precompiled headers
 		if precinc:
-			localEnv['PCHSTOP'] = self.dir + '/' + precinc
-			localEnv.Append( CPPFLAGS = [ '/FI' + self.dir + '/' + precinc, '/Zm135' ] )
+			localEnv['PCHSTOP'] = self.getRealAbsoluteCwd() + '/' + precinc
+			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
 			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
 
 		# create the target
@@ -1067,8 +1067,8 @@ class SConsProject:
 		
 		#adding precompiled headers
 		if precinc:
-			localEnv['PCHSTOP'] = self.dir + '/' + precinc
-			localEnv.Append( CPPFLAGS = [ '/FI' + self.dir + '/' + precinc, '/Zm135' ] )
+			localEnv['PCHSTOP'] = self.getRealAbsoluteCwd() + '/' + precinc
+			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
 			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
 
 		# create the target
