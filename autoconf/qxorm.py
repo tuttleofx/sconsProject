@@ -1,5 +1,6 @@
 from _external import *
 from boost import *
+from boost_serialization import *
 from qt4 import *
 
 qxorm = LibWithHeaderChecker(
@@ -7,6 +8,6 @@ qxorm = LibWithHeaderChecker(
 	'QxOrm.h',
 	'c++',
 	name='qxorm',
-	dependencies= [ boost, qt4(modules=[ 'QtCore', 'QtGui', 'QtSql' ] ) ],
+	dependencies= [ boost, boost_serialization, qt4(modules=[ 'QtCore', 'QtGui', 'QtSql' ] ) ],
 	)
 
