@@ -34,6 +34,8 @@ class SConsProjectChecker(BaseLibChecker):
         else:
             env.AppendUnique( CPPDEFINES = 'UNIX' )
             env.AppendUnique( CPPDEFINES = '__UNIX__' )
+            if macos: # for disabling macros such as check, verify, require ... (AssertMacros.h)
+                env.AppendUnique( CPPDEFINES = '__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0')
 
         if env['mode'] == 'debug' :
             env.AppendUnique( CCFLAGS = project.CC['debug'] )
