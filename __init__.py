@@ -994,7 +994,7 @@ class SConsProject:
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
 
 		#adding precompiled headers
-		if precinc:
+		if precinc and self.windows:
 			localEnv['PCHSTOP'] = self.getRealAbsoluteCwd() + '/' + precinc
 			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
 			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
@@ -1066,7 +1066,7 @@ class SConsProject:
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
 		
 		#adding precompiled headers
-		if precinc:
+		if precinc and self.windows:
 			localEnv['PCHSTOP'] = self.getRealAbsoluteCwd() + '/' + precinc
 			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
 			localEnv['PCH'] = localEnv.PCH( precsrc )[0]

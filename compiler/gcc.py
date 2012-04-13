@@ -29,6 +29,8 @@ CC['version']   = '-dumpversion'
 
 CC['define']   = '-D'
 
+CC['multithreadedlib'] = ''
+CC['singlethreadedlib'] = ''
 
 CC['optimize'] = ['-O2']#,
                   #'-finline-limit=700',
