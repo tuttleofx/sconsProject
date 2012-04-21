@@ -297,6 +297,10 @@ class SConsProject:
 		else:
 			return cdir
 
+	def getCwdInProject(self):
+		cdir = Dir('.').srcnode().abspath
+		return os.path.relpath(cdir, self.dir)
+
 	def getSubDirsAbsolutePath(self, current_dir=None):
 		'''Returns sub-directories with absolute paths (in original file tree).'''
 		if current_dir == None:
@@ -391,18 +395,17 @@ class SConsProject:
 
 	def getName(self, n=1):
 		'''Create a name using the current directory. "n" is the number of parents to build the name.'''
+		v = self.getCwdInProject().split(os.sep)
 		if n == 0:
-			return '_'.join( os.getcwd().split(os.sep) )
-		return '_'.join( os.getcwd().split(os.sep)[-n:] )
+			return '_'.join( v )
+		return '_'.join( v[-n:] )
 
 	def getDirs(self, n=1):
 		'''Create a list of upper directories. "n" is the number of parents.'''
-		alldirs = os.getcwd().split(os.sep)
+		alldirs = self.getCwdInProject().split(os.sep)
 		if isinstance( n, list ):
 			return [alldirs[i] for i in n]
 		else:
-			if n == 0:
-				return alldirs
 			return alldirs[-n:]
 
 	def needConfigure(self):
@@ -1132,12 +1135,15 @@ class SConsProject:
 		return dstInstall
 
 
-	def UnitTest( self, target, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''
 		To create a program and expose it in the project to be simply used by other targets.
 		'''
+		l_target = target
+		if target is None:
+			l_target = self.getDirs(0)
 		l_sources = self.asList(sources)
 		l_dirs = self.asList(dirs)
 		l_libraries = self.asList(libraries)
@@ -1147,7 +1153,7 @@ class SConsProject:
 			l_sources += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not l_sources:
-			raise RuntimeError( 'No source files for the target: ' + target )
+			raise RuntimeError( 'No source files for the target: ' + l_target )
 		
 		localEnv = None
 		localLibraries = l_libraries
@@ -1158,7 +1164,7 @@ class SConsProject:
 				localLibraries += localEnv['SconsProjectLibraries']
 		else:
 			# if no environment we create a new one
-			localEnv = self.createEnv( localLibraries, name=target )
+			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
 
 		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
@@ -1170,7 +1176,7 @@ class SConsProject:
 			localEnv.AppendUnique( **globalEnvFlags )
 
 		# create the target
-		dst = localEnv.UnitTest( target=target, source=l_sources )
+		dst = localEnv.UnitTest( target=l_target, source=l_sources )
 
 		return dst
 
