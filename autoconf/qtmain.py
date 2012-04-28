@@ -1,3 +1,7 @@
 from _external import *
 
-qtmain = LibChecker( 'qtmain' )
+if windows:
+    qtmain = LibChecker( 'qtmain' )
+else:
+    qtmain = ObjectChecker( 'qtmain' )
+
