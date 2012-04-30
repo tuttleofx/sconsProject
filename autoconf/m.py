@@ -1,3 +1,7 @@
 from _external import *
 
-m = LibChecker('m')
+if not windows:
+	m = LibChecker('m')
+else:
+	m = ObjectChecker('m')
+
