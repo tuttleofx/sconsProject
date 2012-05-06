@@ -51,6 +51,12 @@ CC['base']      = [CC['exceptionsEnabled']]
 CC['linkbase']  = []
 
 
+CC['sse']   = ['/arch:SSE']
+CC['sse2']  = ['/arch:SSE2']
+CC['sse3']  = ['/arch:SSE3']
+CC['ssse3'] = ['/arch:SSSE3']
+CC['sse4']  = ['/arch:SSE4']
+
 def version( bin = 'cl' ):
 	import subprocess
 	try:
