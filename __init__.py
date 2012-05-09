@@ -348,10 +348,15 @@ class SConsProject:
 		'''Returns "dirs" as subdirectories of "topDir".'''
 		if not dirs:
 			return self.dir
-		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inTopDir(), dirs[0])
+		if len(dirs) == 1:
+			if issubclass(dirs[0].__class__, SCons.Node.FS.Base):
+				return dirs[0]
+			elif isinstance(dirs[0], str):
+				if os.path.isabs( dirs[0] ):
+					return dirs[0]
+				return os.path.join(self.inTopDir(), dirs[0])
 		l_dirs = SCons.Util.flatten(dirs)
-		return [ inTopDir(d) for d in l_dirs ]
+		return [ self.inTopDir(d) for d in l_dirs ]
 
 	def inOutputDir(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputDir".'''
@@ -412,6 +417,16 @@ class SConsProject:
 			return [alldirs[i] for i in n]
 		else:
 			return alldirs[-n:]
+
+        def convertSconsPathToStr(self, *dirs):
+                '''Returns "dirs" as str.'''
+                if len(dirs) == 1:
+                        if issubclass(dirs[0].__class__, SCons.Node.FS.Base):
+                                return dirs[0].srcnode().abspath
+                        elif isinstance(dirs[0], str):
+                                return dirs[0]
+                l_dirs = SCons.Util.flatten(dirs)
+                return [ self.convertSconsPathToStr(d) for d in l_dirs ]
 
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
@@ -973,6 +988,7 @@ class SConsProject:
 		
 		# add EXTERNCPPPATH to the standard CPPPATH, to add those include paths to the visualProject
 		l_env.AppendUnique( CPPPATH = l_env['EXTERNCPPPATH'] )
+		l_env.Replace( CPPPATH = self.convertSconsPathToStr(l_env['CPPPATH']) )
 
 		visualProject = l_env.MSVSProject(
 			target = os.path.normpath( self.getRealAbsoluteCwd(visualProjectFile) ),
