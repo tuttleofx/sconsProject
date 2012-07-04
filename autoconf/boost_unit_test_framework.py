@@ -9,10 +9,6 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
         self.language = 'c++',
         self.dependencies=[boost]
 
-    def initOptions(self, project, opts):
-        self.initOption_with(project, opts)
-        return True
-
     def configure(self, project, env):
         if not self.enabled(env):
             return True
@@ -20,10 +16,10 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
         return True
 
     def check(self, project, conf):
-        result = self.CheckLib(conf, self.libs ) #, None, None, self.language)
+        result = self.CheckLib( conf, self.getLibs(conf.env) )
         #or result = self.CheckLib(conf, 'boost_unit_test_framework' ) #, None, None, self.language)
         return result
 
 
-boost_unittestframework = BoostUnittestframeworkChecker()
+boost_unit_test_framework = BoostUnittestframeworkChecker()
 

@@ -61,7 +61,8 @@ class Qt4Checker(LibWithHeaderChecker):
 				  defines = ['QT_NO_KEYWORDS'],
 				  useLocalIncludes = True ):
 		self.name  = 'qt4'
-		self.libs = modules[:]
+		postfix = '' if not windows else '4'
+		self.libs = [ m + postfix for m in modules]
 		self.uiFiles =self.getAbsoluteCwd(uiFiles)
 		self.defines = defines[:]
 		self.useLocalIncludes = useLocalIncludes

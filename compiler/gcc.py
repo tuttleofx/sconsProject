@@ -107,3 +107,11 @@ CC['release']   = CC['optimize']
 CC['base']      = []
 CC['linkbase']  = []
 
+
+
+CC['sse']   = ['-msse']
+CC['sse2']  = ['-msse2']
+CC['sse3']  = ['-msse3']
+CC['ssse3']  = ['-mssse3']
+CC['sse4']  = ['-msse4']
+
