@@ -275,7 +275,9 @@ class SConsProject:
 			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
 		cdir = Dir('.').srcnode().abspath
 		if relativePath:
-			if relativePath.startswith('#'):
+			if isinstance(relativePath, SCons.Node.FS.Dir):
+				return relativePath.srcnode().abspath
+			elif relativePath.startswith('#'):
 				return os.path.join(self.dir, relativePath[1:])
 			elif os.path.isabs(relativePath):
 				return relativePath
@@ -346,10 +348,15 @@ class SConsProject:
 		'''Returns "dirs" as subdirectories of "topDir".'''
 		if not dirs:
 			return self.dir
-		if len(dirs) == 1 and isinstance(dirs[0], str):
-			return os.path.join(self.inTopDir(), dirs[0])
+		if len(dirs) == 1:
+			if issubclass(dirs[0].__class__, SCons.Node.FS.Base):
+				return dirs[0]
+			elif isinstance(dirs[0], str):
+				if os.path.isabs( dirs[0] ):
+					return dirs[0]
+				return os.path.join(self.inTopDir(), dirs[0])
 		l_dirs = SCons.Util.flatten(dirs)
-		return [ inTopDir(d) for d in l_dirs ]
+		return [ self.inTopDir(d) for d in l_dirs ]
 
 	def inOutputDir(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputDir".'''
@@ -410,6 +417,16 @@ class SConsProject:
 			return [alldirs[i] for i in n]
 		else:
 			return alldirs[-n:]
+
+        def convertSconsPathToStr(self, *dirs):
+                '''Returns "dirs" as str.'''
+                if len(dirs) == 1:
+                        if issubclass(dirs[0].__class__, SCons.Node.FS.Base):
+                                return dirs[0].srcnode().abspath
+                        elif isinstance(dirs[0], str):
+                                return dirs[0]
+                l_dirs = SCons.Util.flatten(dirs)
+                return [ self.convertSconsPathToStr(d) for d in l_dirs ]
 
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
@@ -665,11 +682,11 @@ class SConsProject:
 		The last function call at the end by the SConstruct.
 		'''
 		if self.windows:
-			visualSolution = env.MSVSSolution(
+			visualSolution = self.env.MSVSSolution(
 				target = 'project' + self.env['MSVSSOLUTIONSUFFIX'],
 				projects = self.allVisualProjects,
 				variant = [m.capitalize() for m in self.modes], )
-			self.env.Alias( 'visualProject', visualSolution )
+			self.env.Depends( visualSolution, self.allVisualProjects )
 			self.env.Alias( 'visualSolution', visualSolution )
 
 		def printInstalledFiles(target, source, env):
@@ -941,34 +958,51 @@ class SConsProject:
 		return objDirs
 
 	def MSVSProject(self, targetName, buildTarget,
-			sources=[], includes=[], localIncludes=[],
+			sources=[], headers=[], localHeaders=[],
 			resources=[], misc=[],
 			env=None
 			):
 		if not self.windows:
 			return
 
-		l_env = env if env else self.env
+		l_env = env.Clone() if env else self.env.Clone()
+		l_buildTarget = self.asList( buildTarget )
 		#print 'visualProject...'
-		mode = envLocal['mode'].capitalize()
+		mode = l_env['mode'].capitalize()
 
 		#visualProjectFile = os.path.join('visualc', targetName + envLocal['MSVSPROJECTSUFFIX'])
-		visualProjectFile = targetName + envLocal['MSVSPROJECTSUFFIX']
+		visualProjectFile = targetName + l_env['MSVSPROJECTSUFFIX']
+		#print '_-'*40
 		#print 'targetName:', targetName
-		#print 'visualProjectFile:', visualProjectFile
+		##print 'visualProjectFile:', visualProjectFile
+		##print 'target:', self.getRealAbsoluteCwd(visualProjectFile)
+		##print '[buildTarget[0]]:', [buildTarget[0]]
+
+		#print 'srcs:', [os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in sources]
+		#print '-'*20
+		#print 'incs:', [os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in headers]
+		#print '-'*20
+		##print 'localincs:', localIncludes
+		#print 'local abs incs:', [os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in localHeaders]
+		#print '-'*20
+		
+		# add EXTERNCPPPATH to the standard CPPPATH, to add those include paths to the visualProject
+		l_env.AppendUnique( CPPPATH = l_env['EXTERNCPPPATH'] )
+		l_env.Replace( CPPPATH = self.convertSconsPathToStr(l_env['CPPPATH']) )
+
 		visualProject = l_env.MSVSProject(
-			target = visualProjectFile,
-			srcs = sources,
-			incs = includes,
-			localincs = localIncludes,
+			target = os.path.normpath( self.getRealAbsoluteCwd(visualProjectFile) ),
+			srcs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in sources],
+			incs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in headers],
+			localincs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in localHeaders],
 			resources = resources,
 			misc = misc,
-			buildtarget = buildTarget,
-			#auto_build_solution=0,
-			variant = [m.capitalize() for m in self.modes],
+			buildtarget = buildTarget[0],
+			auto_build_solution = False,
+			variant = self.env['mode'].capitalize() #[m.capitalize() for m in self.modes],
 			)
 		self.allVisualProjects.append( visualProject )
-		#self.env.Alias( 'visualProject', visualProject )
+		self.env.Alias( 'visualProject-'+targetName, visualProject )
 
 	def ObjectLibrary( self, target,
 			libraries=[], includes=[], envFlags={}, sources=[],
@@ -998,6 +1032,7 @@ class SConsProject:
 			sources=[], dirs=[], libraries=[], includes=[],
 			env=None, localEnvFlags={}, replaceLocalEnvFlags={}, externEnvFlags={}, globalEnvFlags={},
 			dependencies=[], installDir=None, installAs=None, install=True,
+			headers=[], localHeaders=[],
 			accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'],
 			shared=False, public=True, publicName=None,
 			):
@@ -1019,6 +1054,8 @@ class SConsProject:
 		installDir: Destination directory to install the target
 		installAs: Full path of the fil to install
 		install: install the target (in the default or custom dir or renamed using installAs)
+		headers: headers to include in the project (not for build, but project generation eg. visualProject)
+		localHeaders: headers to include in the project (not for build, but project generation eg. visualProject)
 		accept: pattern to filter the source files search in @p dirs
 		reject: pattern to filter the source files search in @p dirs
 		public: If you declares the library as public, it can be used by other targets.
@@ -1087,9 +1124,13 @@ class SConsProject:
 		localEnv.Alias( target, dstLibInstall )
 		localEnv.Alias( 'all', target )
 
-		self.MSVSProject( target, dstLibInstall,
-			sources=l_sources, includes=l_includes, localIncludes=localIncludes,
-			)
+		if self.windows:
+			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
+			self.MSVSProject( target, dstLibInstall,
+				sources=sourcesFiles,
+				headers=l_headers, localHeaders=localHeaders,
+				env = localEnv,
+				)
 
 		# expose this library
 		envFlags=externEnvFlags
@@ -1109,6 +1150,7 @@ class SConsProject:
 				sources=[], dirs=[], libraries=[], includes=[],
 				env=None, localEnvFlags={}, replaceLocalEnvFlags={}, externEnvFlags={}, globalEnvFlags={},
 				dependencies=[], installDir=None, installAs=None, install=True,
+				headers=[], localHeaders=[],
 				accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'],
 				public=True, publicName=None,
 			):
@@ -1129,6 +1171,8 @@ class SConsProject:
 		installDir: Destination directory to install the target
 		installAs: Full path of the fil to install
 		install: install the target (in the default or custom dir or renamed using installAs)
+		headers: headers to include in the project (not for build, but project generation eg. visualProject)
+		localHeaders: headers to include in the project (not for build, but project generation eg. visualProject)
 		accept: pattern to filter the source files search in @p dirs
 		reject: pattern to filter the source files search in @p dirs
 		public: If you declares the library as public, it can be used by other targets.
@@ -1192,9 +1236,13 @@ class SConsProject:
 		localEnv.Alias( target, dstLibInstall )
 		localEnv.Alias( 'all', target )
 
-		self.MSVSProject( target, dstLibInstall,
-			sources=l_sources, includes=l_includes, localIncludes=localIncludes,
-			)
+		if self.windows:
+			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
+			self.MSVSProject( target, dstLibInstall,
+				sources = sourcesFiles,
+				headers = l_headers, localHeaders=localHeaders,
+				env = localEnv,
+				)
 
 		# expose this library
 		envFlags=externEnvFlags
@@ -1211,11 +1259,33 @@ class SConsProject:
 		return dstLibInstall
 
 	def Program( self, target,
-			sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
-	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[], installDir=None, install=True,
-	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
+			sources=[], dirs=[], libraries=[], includes=[],
+			env=None, localEnvFlags={}, replaceLocalEnvFlags={}, externEnvFlags={}, globalEnvFlags={},
+			dependencies=[], installDir=None, install=True,
+			headers=[], localHeaders=[],
+			accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''
 		To create a program and expose it in the project to be simply used by other targets.
+
+		target: name of the target file
+		sources: list of source files
+		dirs: list of directories that contains the sources files
+		libraries: list of libraries
+		includes: list of include directories
+		env: you can specify your custom environment to create the library
+		localEnvFlags: defines some flags locally
+		replaceLocalEnvFlags: defines some flags locally
+		externEnvFlags: defines some flags for external usage of the library (only other targets that use the current library will have these flags)
+		globalEnvFlags: defines some flags
+		dependencies: 
+		installDir: Destination directory to install the target
+		installAs: Full path of the fil to install
+		install: install the target (in the default or custom dir or renamed using installAs)
+		headers: headers to include in the project (not for build, but project generation eg. visualProject)
+		localHeaders: headers to include in the project (not for build, but project generation eg. visualProject)
+		accept: pattern to filter the source files search in @p dirs
+		reject: pattern to filter the source files search in @p dirs
+		public: If you declares the library as public, it can be used by other targets.
 		'''
 		l_sources = self.asList(sources)
 		l_dirs = self.asList(dirs)
@@ -1259,9 +1329,13 @@ class SConsProject:
 		localEnv.Alias( target, dstInstall )
 		localEnv.Alias( 'all', target )
 
-		self.MSVSProject( target, dstInstall,
-			sources=l_sources, includes=l_includes, localIncludes=localIncludes,
-			)
+		if self.windows:
+			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
+			self.MSVSProject( target, dstInstall,
+				sources=sourcesFiles,
+				headers=l_headers, localHeaders=localHeaders,
+				env = localEnv,
+				)
 
 		return dstInstall
 
@@ -1316,6 +1390,10 @@ class SConsProject:
 		'''Return v inside a list if not a list.'''
 		if isinstance(v, list):
 			return v[:]
+		if isinstance(v, tuple):
+			return v[:]
+		if isinstance(v, SCons.Node.NodeList):
+			return v
 		return [v]
 
 	def recursiveDirs(self, root):
