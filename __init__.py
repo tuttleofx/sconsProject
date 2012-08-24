@@ -1358,7 +1358,7 @@ class SConsProject:
 			l_sources += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not l_sources:
-			raise RuntimeError( 'No source files for the target: ' + l_target )
+			raise RuntimeError( 'No source files for the target: ' + str(l_target) )
 		
 		localEnv = None
 		localLibraries = l_libraries
