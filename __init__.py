@@ -92,6 +92,7 @@ class SConsProject:
 	dir_output        = 'undefined'               #
 	dir_output_bin    = 'undefined'               # name generated depending on compilation type,
 	dir_output_lib    = 'undefined'               # we need to know if we are in debug mode, etc.
+	dir_output_plugin = 'undefined'
 	dir_output_header = 'undefined'               # (options needs to be initilized)
 	dir_output_test   = 'undefined'               #
 	dir_sconsProject  = os.path.abspath(os.path.dirname(__file__)) # directory containing this file
@@ -199,6 +200,7 @@ class SConsProject:
 		print ':: dir                = ' + self.dir
 		print ':: dir_output_build   = ' + self.dir_output_build
 		print ':: dir_output_bin     = ' + self.dir_output_bin
+		print ':: dir_output_plugin  = ' + self.dir_output_plugin
 		print ':: dir_output_lib     = ' + self.dir_output_lib
 		print ':: dir_output_test    = ' + self.dir_output_test
 		print ':: dir_sconsProject   = ' + self.dir_sconsProject
@@ -393,6 +395,15 @@ class SConsProject:
 			return os.path.join( self.inOutputBin(), dirs[0] )
 		l_dirs = SCons.Util.flatten(dirs)
 		return [ self.inOutputBin(d) for d in l_dirs ]
+
+	def inOutputPlugin(self, *dirs):
+		'''Returns "dirs" as subdirectories of "outputPlugin".'''
+		if not dirs:
+			return self.dir_output_plugin
+		if len(dirs) == 1 and isinstance(dirs[0], str):
+			return os.path.join( self.inOutputPlugin(), dirs[0] )
+		l_dirs = SCons.Util.flatten(dirs)
+		return [ self.inOutputPlugin(d) for d in l_dirs ]
 
 	def inOutputTest(self, *dirs):
 		'''Returns "dirs" as subdirectories of "outputTest".'''
@@ -613,6 +624,7 @@ class SConsProject:
 		self.dir_output        = install_dir
 		self.dir_output_bin    = os.path.join(install_dir, 'bin')
 		self.dir_output_lib    = os.path.join(install_dir, 'lib')
+		self.dir_output_plugin = os.path.join(install_dir, 'plugin')
 		self.dir_output_header = os.path.join(install_dir, 'include')
 		self.dir_output_test   = os.path.join(install_dir, 'test')
 
