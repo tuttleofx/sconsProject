@@ -16,7 +16,13 @@ mpsep = ':' if not windows else ';'
 def builder_unit_test(target, source, env):
 	app = str(source[0].abspath)
 	procenv = env['ENV']
-	procenv[ld_library_path] = mpsep.join(env['LIBPATH']).replace('#', env['TOPDIR']+'/')
+	ldPaths = []
+	for p in env['LIBPATH']:
+		pp = p.replace('#', env['TOPDIR']+'/')
+		pEval = env.subst(pp)
+		if pEval:
+			ldPaths.append(pEval)
+	procenv[ld_library_path] = mpsep.join(ldPaths)
 	if subprocess.call(app, env=procenv) == 0:
 		open(str(target[0]), 'w').write("PASSED\n")
 	else:
