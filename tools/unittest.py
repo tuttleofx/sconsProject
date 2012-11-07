@@ -15,6 +15,7 @@ def execute_UnitTest(target, source, env):
 	Execute source param executable and create a file into target param.
 	'''
 	app = str(source[0].abspath)
+	outputFilename = str(target[0])
 	procenv = env['ENV']
 	
 	# Format LIBPATH to convert expressions into plain filepath
@@ -26,11 +27,36 @@ def execute_UnitTest(target, source, env):
 			ldPaths.append(pEval)
 	procenv[ld_library_path] = mpsep.join(ldPaths)
 
+	writingFilename = outputFilename + "-writing"
+	failedFilename = outputFilename + "-failed"
+
+	# clean before the new build
+	if os.path.exists(outputFilename):
+		os.remove(outputFilename)
+	if os.path.exists(writingFilename):
+		os.remove(writingFilename)
+	if os.path.exists(failedFilename):
+		os.remove(failedFilename)
+
 	# Execute the test.
-	errcode = subprocess.call(app, env=procenv)
+	errcode = 0
+	with open(writingFilename, 'w') as writingFile:
+		errcode = subprocess.call(app, env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
+
+	for line in open(writingFilename, 'r').readlines():
+		sys.stdout.write( "    " + line )
+
+	# We use a fake file to keep a timestamp for file dependencies.
+	# We keep the log inside this file.
 	if errcode == 0:
-		# Write something to the target file. It's just a fake file to keep a timestamp for file dependencies.
-		open(str(target[0]), 'w').write("PASSED\n")
+		# The test is passed with success.
+		# We rename the log file to the output dependence filename,
+		# so the test will seen has done by scons, and
+		# will not be executed again.
+		os.rename(writingFilename, outputFilename)
+	else:
+		# the failed file is not the output dependence
+		os.rename(writingFilename, failedFilename)
 	return errcode
 
 
@@ -51,7 +77,7 @@ def UnitTest(env, source, **kwargs):
 	
 	test = env.Program( target='-'.join( target ), source=source )
 	
-	unittest = env.ExecUnitTest( test[0].abspath+'.unittest_passed', test )
+	unittest = env.ExecUnitTest( test[0].abspath+'.unittest', test )
 	
 	# Build one alias for each element of the target list.
 	for i in range(1,len(target)+1):
