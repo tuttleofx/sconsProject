@@ -51,7 +51,7 @@ def UnitTest(env, source, **kwargs):
 	
 	test = env.Program( target='-'.join( target ), source=source )
 	
-	unittest = env.ExecTest( test[0].abspath+'.unittest_passed', test )
+	unittest = env.ExecUnitTest( test[0].abspath+'.unittest_passed', test )
 	
 	# Build one alias for each element of the target list.
 	for i in range(1,len(target)+1):
@@ -66,7 +66,7 @@ def generate(env):
 	"""
 	import SCons.Builder
 	unitTestExecute = SCons.Builder.Builder(action = execute_UnitTest)
-	env.Append(BUILDERS = {'ExecTest' : unitTestExecute })
+	env.Append(BUILDERS = {'ExecUnitTest' : unitTestExecute })
 
 	SConsEnvironment.UnitTest = UnitTest
 

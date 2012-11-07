@@ -75,7 +75,7 @@ def ScriptTest(env, source, **kwargs):
 	else:
 		raise RuntimeError( 'Target value not recognized:', kwargs['target'] )
 	
-	scripttest = env.ExecTest( source+'.scripttest', source )
+	scripttest = env.ExecScriptTest( source+'.scripttest', source )
 	
 	env.Alias( os.path.splitext(os.path.basename(source))[0], scripttest)
 
@@ -92,7 +92,7 @@ def generate(env):
 	"""
 	import SCons.Builder
 	scriptTestExecute = SCons.Builder.Builder(action = execute_ScriptTest)
-	env.Append(BUILDERS = {'ExecTest' : scriptTestExecute })
+	env.Append(BUILDERS = {'ExecScriptTest' : scriptTestExecute })
 
 	SConsEnvironment.ScriptTest = ScriptTest
 
