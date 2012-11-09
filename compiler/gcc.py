@@ -12,7 +12,7 @@ cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
 
-def version( bin = 'gcc' ):
+def version( bin = ccBin ):
 	import subprocess
 	try:
 		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
