@@ -29,6 +29,7 @@ CC['version']   = '-dumpversion'
 
 CC['define']   = '-D'
 
+CC['bigobj'] = ''
 CC['multithreadedlib'] = ''
 CC['singlethreadedlib'] = ''
 

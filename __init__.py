@@ -280,6 +280,8 @@ class SConsProject:
 		if relativePath:
 			if isinstance(relativePath, SCons.Node.FS.Dir):
 				return relativePath.srcnode().abspath
+			elif not isinstance(relativePath, str):
+				return relativePath
 			elif relativePath.startswith('#'):
 				return os.path.join(self.dir, relativePath[1:])
 			elif os.path.isabs(relativePath):
@@ -1008,10 +1010,10 @@ class SConsProject:
 		l_env.Replace( CPPPATH = self.convertSconsPathToStr(l_env['CPPPATH']) )
 
 		visualProject = l_env.MSVSProject(
-			target = os.path.normpath( self.getRealAbsoluteCwd(visualProjectFile) ),
-			srcs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in sources],
-			incs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in headers],
-			localincs = [ os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in localHeaders],
+			target = self.normpath( self.getRealAbsoluteCwd(visualProjectFile) ),
+			srcs = [ self.normpath( self.getRealAbsoluteCwd(i) ) for i in sources],
+			incs = [ self.normpath( self.getRealAbsoluteCwd(i) ) for i in headers],
+			localincs = [ self.normpath( self.getRealAbsoluteCwd(i) ) for i in localHeaders],
 			resources = resources,
 			misc = misc,
 			buildtarget = buildTarget[0],
@@ -1020,6 +1022,11 @@ class SConsProject:
 			)
 		self.allVisualProjects.append( visualProject )
 		self.env.Alias( 'visualProject-'+targetName, visualProject )
+
+	def normpath( self, s ):
+		if ( isinstance(s, str) ):
+			return os.path.normpath( s )
+		return s
 
 	def ObjectLibrary( self, target,
 			libraries=[], includes=[], envFlags={}, sources=[],
@@ -1289,7 +1296,7 @@ class SConsProject:
 		return dstLibInstall
 
 	def Program( self, target,
-			sources=[], dirs=[], libraries=[], includes=[],
+			sources=[], dirs=[], libraries=[], includes=[], rc_files = [], precsrc = [], precinc = [],
 			env=None, localEnvFlags={}, replaceLocalEnvFlags={}, externEnvFlags={}, globalEnvFlags={},
 			dependencies=[], installDir=None, install=True,
 			headers=[], localHeaders=[],
@@ -1332,7 +1339,7 @@ class SConsProject:
 		localEnv = None
 		localLibraries = l_libraries
 		if env:
-			localEnv = env.Clone()
+			localEnv = env
 			self.appendLibsToEnv(localEnv, localLibraries)
 			if 'SconsProjectLibraries' in localEnv:
 				localLibraries += localEnv['SconsProjectLibraries']
@@ -1351,10 +1358,20 @@ class SConsProject:
 			localEnv.AppendUnique( **globalEnvFlags )
 
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
+
+		# Add rc files (windows only)
+		if self.windows:
+			for rc in rc_files:
+				print rc
+#				sourcesFiles.append( localEnv.RES( rc ) );
+
+		if precinc and self.windows:
+			localEnv['PCHSTOP'] = self.getRealAbsoluteCwd() + '/' + precinc
+			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
+    		localEnv['PCH'] = localEnv.PCH( precsrc )[0]
 		
 		# create the target
 		dst = localEnv.Program( target=target, source=sourcesFiles )
-
 		dstInstall = localEnv.Install( installDir if installDir else self.inOutputBin(), dst ) if install else dst
 		localEnv.Alias( target, dstInstall )
 		localEnv.Alias( 'all', target )
