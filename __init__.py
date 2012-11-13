@@ -456,6 +456,8 @@ class SConsProject:
 		Read options from configuration files and at last from the command line
 		(which has the last word)
 		'''
+
+		self.env.Tool('default')
 		# default values
 		if self.windows:
 			self.compiler    = compiler.visual
@@ -480,11 +482,12 @@ class SConsProject:
 		else:
 			self.env['CCVERSION'] = self.compiler.version(self.env['CC'])
 			self.env['CXXVERSION'] = self.compiler.version(self.env['CXX'])
-		
+
 		# select the environment from user options
 		compilerName = self.env['compiler']
 		self.compiler   = eval( 'compiler.' + compilerName )
 		self.CC         = self.compiler.CC
+
 		if self.windows:
 			if compilerName == 'visual':
 				self.env.Tool('default')
@@ -494,8 +497,6 @@ class SConsProject:
 			else:
 				self.env.Tool('default')
 				print 'Error: Unrecognized compiler value on this platform. ('+str(compilerName)+')'
-		else:
-			self.env.Tool('default')
 
 	def createOptions(self, filename, args):
 		'''
