@@ -3,7 +3,7 @@ from gl import *
 from glu import *
 
 freeglut = LibWithHeaderChecker(
-		'freeglut',
+		'glut',
 		['GL/freeglut.h'],
 		'c',
 		dependencies=[gl,glu]
