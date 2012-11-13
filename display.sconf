@@ -1,6 +1,9 @@
 #______________________________________________________________________________#
 #                                   Display                                    #
 #______________________________________________________________________________#
+from SCons.Environment import *
+from SCons.Script import *
+env = Environment()
 
 color_autoconf = color_blue
 color_header   = color_violet
@@ -14,72 +17,51 @@ color_compile  = color_red
 color_link     = color_redB
 color_install  = color_blue
 
+SHCCCOMSTR    = '''$color_compile Compiling shared object : $TARGET $color_clear\n$SHCCCOM'''
 
-SHCCCOMSTR    = '''
-$color_compile-------------------- Compiling shared object : $TARGET --------------------$color_clear
-$SHCCCOM
+SHCXXCOMSTR   = '''$color_compile Compiling shared object : $TARGET $color_clear\n$SHCXXCOM'''
 
-'''
-SHCXXCOMSTR    = '''
-$color_compile-------------------- Compiling shared object : $TARGET --------------------$color_clear
-$SHCXXCOM
+SHLINKCOMSTR  = '''$color_link Linking shared object : $TARGET $color_clear\n$SHLINKCOM'''
 
-'''
-SHLINKCOMSTR  = '''
+CCCOMSTR      = '''$color_compile Compiling : $TARGET $color_clear\n$CCCOM'''
 
+CXXCOMSTR     = '''$color_compile Compiling : $TARGET $color_clear\n$CXXCOM'''
 
-$color_link==================== Linking shared object : $TARGET ====================$color_clear
-$SHLINKCOM
+LINKCOMSTR    = '''$color_link Linking : $TARGET $color_clear\n$LINKCOM'''
 
+ARCOMSTR      = '''$color_link Archiving : $TARGET $color_clear\n$ARCOM'''
 
-'''
-CCCOMSTR      = '''
-$color_compile-------------------- Compiling : $TARGET --------------------$color_clear
-$CCCOM
+INSTALLSTR    = '''$color_install Install file: $SOURCE as $TARGET $color_clear'''
 
-'''
-CXXCOMSTR      = '''
-$color_compile-------------------- Compiling : $TARGET --------------------$color_clear
-$CXXCOM
+SWIGCOMSTR    = '''$color_compile SWIG compiling : $TARGET $color_clear\n$SWIGCOM'''
 
-'''
-LINKCOMSTR    = '''
+QT4_MOCFROMCXXCOMSTR = '''$color_compile QT moc (from cpp) compiling : $TARGET $color_clear\n$QT4_MOCFROMCXXCOM'''
 
+QT4_MOCFROMHCOMSTR   = '''$color_compile QT moc (from hpp) compiling : $TARGET $color_clear\n$QT4_MOCFROMHCOM'''
 
-$color_link==================== Linking : $TARGET ====================$color_clear
-$LINKCOM
+QT4_UICCOMSTR        = '''$color_compile QT uic compiling : $TARGET$color_clear\n$QT4_UICCOM'''
 
-'''
-ARCOMSTR = '''
-
-$color_link==================== Archiving : $TARGET ====================$color_clear
-$ARCOM
-
-'''
-
-INSTALLSTR = '''
-$color_install== Install file: $SOURCE as $TARGET ==$color_clear
-
-'''
-
-
-SWIGCOMSTR    = '''
-$color_compile-------------------- SWIG compiling : $TARGET --------------------$color_clear
-$SWIGCOM
-
-'''
-QT4_MOCFROMCXXCOMSTR = '''
-$color_compile-------------------- QT moc (from cpp) compiling : $TARGET --------------------$color_clear
-$QT_MOCFROMCXXCOM
-
-'''
-QT4_MOCFROMHCOMSTR   = '''
-$color_compile-------------------- QT moc (from hpp) compiling : $TARGET --------------------$color_clear
-$QT_MOCFROMHCOM
-
-'''
-QT4_UICCOMSTR        = '''
-$color_compile-------------------- QT uic compiling : $TARGET --------------------$color_clear
-$QT_UICCOM
-
-'''
+if ARGUMENTS.get('VERBOSE') == "0":
+	SHCCCOMSTR    = '''$color_compile Compiling shared object : $TARGET $color_clear'''
+	
+	SHCXXCOMSTR   = '''$color_compile Compiling shared object : $TARGET $color_clear'''
+	
+	SHLINKCOMSTR  = '''$color_link Linking shared object : $TARGET $color_clear'''
+	
+	CCCOMSTR      = '''$color_compile Compiling : $TARGET $color_clear'''
+	
+	CXXCOMSTR     = '''$color_compile Compiling : $TARGET $color_clear'''
+	
+	LINKCOMSTR    = '''$color_link Linking : $TARGET $color_clear'''
+	
+	ARCOMSTR      = '''$color_link Archiving : $TARGET $color_clear'''
+	
+	INSTALLSTR    = '''$color_install Install file: $SOURCE as $TARGET $color_clear'''
+	
+	SWIGCOMSTR    = '''$color_compile SWIG compiling : $TARGET $color_clear'''
+	
+	QT4_MOCFROMCXXCOMSTR = '''$color_compile QT moc (from cpp) compiling : $TARGET $color_clear'''
+	
+	QT4_MOCFROMHCOMSTR   = '''$color_compile QT moc (from hpp) compiling : $TARGET $color_clear'''
+	
+	QT4_UICCOMSTR        = '''$color_compile QT uic compiling : $TARGET$color_clear'''
