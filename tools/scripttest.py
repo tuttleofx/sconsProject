@@ -10,7 +10,7 @@ ld_library_path = 'LD_LIBRARY_PATH' if not windows else 'PATH'
 mpsep = ':' if not windows else ';'
 
 
-def execute_UnitTest(target, source, env):
+def execute_ScriptTest(target, source, env):
 	'''
 	Execute source param executable and create a file into target param.
 	'''
@@ -41,7 +41,7 @@ def execute_UnitTest(target, source, env):
 	# Execute the test.
 	errcode = 0
 	with open(writingFilename, 'w') as writingFile:
-		errcode = subprocess.call(app, env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
+		errcode = subprocess.call([env['SCRIPTTESTXX'], app, env['SCRIPTTESTFLAGS']], env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
 
 	for line in open(writingFilename, 'r').readlines():
 		sys.stdout.write( "    " + line )
@@ -60,14 +60,14 @@ def execute_UnitTest(target, source, env):
 	return errcode
 
 
-def UnitTest(env, source, **kwargs):
+def ScriptTest(env, source, **kwargs):
 	'''
 	Function added to the SCons Environment.
 	Build an application from source files and run this executable as a Test.
 	'''
-	target = ['unittest']
+	target = ['scripttest']
 	if 'target' not in kwargs:
-		raise RuntimeError( 'No target for unittest.' )
+		raise RuntimeError( 'No target for scripttest.' )
 	elif isinstance( kwargs['target'], list ):
 		target.extend( kwargs['target'] )
 	elif isinstance( kwargs['target'], str ):
@@ -75,26 +75,26 @@ def UnitTest(env, source, **kwargs):
 	else:
 		raise RuntimeError( 'Target value not recognized:', kwargs['target'] )
 	
-	test = env.Program( target='-'.join( target ), source=source )
+	scripttest = env.ExecScriptTest( source+'.scripttest', source )
 	
-	unittest = env.ExecUnitTest( test[0].abspath+'.unittest', test )
-	
+	env.Alias( os.path.splitext(os.path.basename(source))[0], scripttest)
+
 	# Build one alias for each element of the target list.
 	for i in range(1,len(target)+1):
-		env.Alias('-'.join(target[0:i]), unittest)
+		env.Alias('-'.join(target[0:i]), scripttest)
 
-	return test
+	return scripttest
 
 
 def generate(env):
 	"""
-	Add builders and construction variables for unittest.
+	Add builders and construction variables for scripttest.
 	"""
 	import SCons.Builder
-	unitTestExecute = SCons.Builder.Builder(action = execute_UnitTest)
-	env.Append(BUILDERS = {'ExecUnitTest' : unitTestExecute })
+	scriptTestExecute = SCons.Builder.Builder(action = execute_ScriptTest)
+	env.Append(BUILDERS = {'ExecScriptTest' : scriptTestExecute })
 
-	SConsEnvironment.UnitTest = UnitTest
+	SConsEnvironment.ScriptTest = ScriptTest
 
 
 def exists(env):
