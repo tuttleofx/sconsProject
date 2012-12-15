@@ -30,7 +30,7 @@ CC['version']   = '-dumpversion'
 CC['define']   = '-D'
 
 
-CC['optimize'] = ['-O3', '-flto']#,
+CC['optimize'] = ['-O3'] #, '-flto']#,
                   #'-finline-limit=700',
                   #'--param large-function-growth=1000']
 # '--param inline-unit-growth=100','--param large-function-growth=1000'
@@ -49,7 +49,7 @@ CC['nooptimize'] =['-O0']
 # -march=pentiumpro
 # -fnonnull-objects
 
-CC['linkoptimize'] = ['-flto']
+CC['linkoptimize'] = [] #['-flto']
 CC['linknooptimize'] = []
 
 
