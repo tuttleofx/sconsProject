@@ -117,6 +117,7 @@ class SConsProject:
 		'''
 		Initialisation of variables depending on computer.
 		'''
+		self.allTargets = {}
 		if self.windows:
 			self.packagetype    = 'msi'
 		else:
@@ -283,6 +284,8 @@ class SConsProject:
 			elif relativePath.startswith('#'):
 				return os.path.join(self.dir, relativePath[1:])
 			elif os.path.isabs(relativePath):
+				if relativePath.startswith(self.dir_output_build):
+					return os.path.join(self.dir, relativePath[len(self.dir_output_build)+1:])
 				return relativePath
 			return os.path.join(cdir, relativePath)
 		else:
@@ -1043,6 +1046,7 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		self.allTargets[publicName if publicName else target] = (None,dstLibChecker)
 		return dstLibChecker
 
 	def StaticLibrary( self, target,
@@ -1161,6 +1165,7 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
 	def SharedLibrary( self, target,
@@ -1231,7 +1236,7 @@ class SConsProject:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
 
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
-		
+
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
 
@@ -1273,6 +1278,7 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
 	def Program( self, target,
@@ -1354,6 +1360,7 @@ class SConsProject:
 				env = localEnv,
 				)
 
+		self.allTargets[target] = (dstInstall,None)
 		return dstInstall
 
 
@@ -1402,50 +1409,76 @@ class SConsProject:
 
 		return dst
 
-	def ScriptTests( self, target=None, sources=[], dirs=[], env=None, libraries=[], dependencies=[], envFlags={}, procEnvFlags={},
-	                         accept=['test*.py'], reject=['@'] ):
+	def ScriptTests( self, target=None, sources=[], dirs=[], checkDependencies=True, env=None, libraries=[], dependencies=[], envFlags={}, procEnvFlags={},
+							 accept=['test*.py'], reject=['@'] ):
 		'''
 		This target is a list of python script files to execute.
+		
+		If checkDependencies is True, it will check the first line of the script:
+		"# scons: " and a list of dependencies
+		These could be libraries which will configure your environment
+		or just build dependencies needed to run the test.
 		'''
 		l_target = target
 		if target is None:
 			l_target = self.getDirs(0)
-		
+
 		l_sources = self.asList(sources)
 		l_dirs = self.asList(dirs)
 		l_libraries = self.asList(libraries)
 		l_dependencies = self.asList(dependencies)
-		
+
 		if l_dirs:
 			l_sources += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not l_sources:
 			raise RuntimeError( 'No source files for the target: ' + str(l_target) )
-		
-		localEnv = None
-		localLibraries = l_libraries
-		if env:
-			localEnv = env.Clone()
-			if 'SconsProjectLibraries' in localEnv:
-				localLibraries += localEnv['SconsProjectLibraries']
-			self.appendLibsToEnv(localEnv, localLibraries)
-		else:
-			# if no environment we create a new one
-			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
-
-		if envFlags:
-			localEnv.AppendUnique( **envFlags )
-		if procEnvFlags:
-			for k, v in procEnvFlags.iteritems():
-				localEnv.PrependENVPath( k, v )
 
 		# create the target
 		allDst = []
 		for s in l_sources:
-			dst = localEnv.ScriptTest( source=s, target=l_target )
-			allDst.append(dst)
 
-		return dst
+			libsFromFile = []
+			depsFromFile = []
+			if checkDependencies:
+				scriptFilename = self.getRealAbsoluteCwd(s)
+				firstline = file(scriptFilename, 'r').readline()
+				sconsDepPattern = '# scons:'
+				if firstline.startswith(sconsDepPattern):
+					dependenciesStr = firstline[len(sconsDepPattern):].split()
+					err = []
+					for d in dependenciesStr:
+						if d not in self.allTargets:
+							err.append(d)
+					if err:
+						raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(self.allTargets.keys())) )
+					targets = [self.allTargets[d] for d in dependenciesStr]
+					depsFromFile = [d[0] for d in targets if d[0]]
+					libsFromFile = [d[1] for d in targets if d[1]]
+
+			localEnv = None
+			localLibraries = l_libraries + libsFromFile
+			if env:
+				localEnv = env.Clone()
+				if 'SconsProjectLibraries' in localEnv:
+					localLibraries += localEnv['SconsProjectLibraries']
+				self.appendLibsToEnv(localEnv, localLibraries)
+			else:
+				# if no environment we create a new one
+				localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
+
+			if envFlags:
+				localEnv.AppendUnique( **envFlags )
+			if procEnvFlags:
+				for k, v in procEnvFlags.iteritems():
+					localEnv.PrependENVPath( k, v )
+				dst = localEnv.ScriptTest( source=s, target=l_target )
+				allDst.append(dst)
+			if depsFromFile:
+				localEnv.Depends( dst, depsFromFile )
+			if l_dependencies:
+				localEnv.Depends( dst, l_dependencies )
+		return allDst
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
