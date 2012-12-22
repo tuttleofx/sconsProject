@@ -1480,6 +1480,8 @@ class SConsProject:
 				localEnv.Depends( dst, depsFromFile )
 			if l_dependencies:
 				localEnv.Depends( dst, l_dependencies )
+			if l_libraries:
+				localEnv.Depends( dst, [lib.libs for lib in l_libraries] )
 		return allDst
 
 #-------------------- Automatic file/directory search -------------------------#
