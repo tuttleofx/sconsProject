@@ -1449,15 +1449,19 @@ class SConsProject:
 				sconsDepPattern = '# scons:'
 				if firstline.startswith(sconsDepPattern):
 					dependenciesStr = firstline[len(sconsDepPattern):].split()
-					err = []
-					for d in dependenciesStr:
-						if d not in self.allTargets:
-							err.append(d)
-					if err:
-						if self.env['mode'] == 'production':
-							continue
-						raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(self.allTargets.keys())) )
-					targets = [self.allTargets[d] for d in dependenciesStr]
+					targets = []
+					if dependenciesStr == ['all']:
+						targets = self.allTargets.values()
+					else:
+						err = []
+						for d in dependenciesStr:
+							if d not in self.allTargets:
+								err.append(d)
+						if err:
+							if self.env['mode'] == 'production':
+								continue
+							raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(self.allTargets.keys())) )
+						targets = [self.allTargets[d] for d in dependenciesStr]
 					depsFromFile = [d[0] for d in targets if d[0]]
 					libsFromFile = [d[1] for d in targets if d[1]]
 
