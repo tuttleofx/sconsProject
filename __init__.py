@@ -1278,6 +1278,9 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		if publicName:
+			localEnv.Alias( publicName, dstLibInstall )
+		
 		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
