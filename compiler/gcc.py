@@ -13,16 +13,16 @@ linkBin = ccBin
 linkxxBin = cxxBin
 
 def version( bin = ccBin ):
-	import subprocess
-	try:
-		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
-	except:
-		return 'unknown'
+    import subprocess
+    try:
+        return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+    except:
+        return 'unknown'
 
 gccVersionStr = version()
 gccVersion = [0,0,0]
 if gccVersionStr != 'unknown':
-	gccVersion = [int(i) for i in gccVersionStr.split('.')]
+    gccVersion = [int(i) for i in gccVersionStr.split('.')]
 
 CC = {}
 CC['version']   = '-dumpversion'
@@ -30,51 +30,54 @@ CC['version']   = '-dumpversion'
 CC['define']   = '-D'
 
 
-CC['optimize'] = ['-O2']#,
+CC['optimize'] = ['-O3'] #, '-flto']#,
                   #'-finline-limit=700',
                   #'--param large-function-growth=1000']
 # '--param inline-unit-growth=100','--param large-function-growth=1000'
 # -finline-limit par defaut 600
 CC['nooptimize'] =['-O0']
-#	-0s : optimise en vitesse mais aussi en taille
-#	-O9
-#	-funroll-loops
-#	-ffast-math
-#	-malign-double
-#	-mcpu=pentiumpro
-#	-march=pentiumpro
-#	-fomit-frame-pointer
-#	-O3
-#	-mcpu=pentiumpro
-#	-march=pentiumpro
-#	-fnonnull-objects
+# -0s : optimise en vitesse mais aussi en taille
+# -O9
+# -funroll-loops
+# -ffast-math
+# -malign-double
+# -mcpu=pentiumpro
+# -march=pentiumpro
+# -fomit-frame-pointer
+# -O3
+# -mcpu=pentiumpro
+# -march=pentiumpro
+# -fnonnull-objects
+
+CC['linkoptimize'] = [] #['-flto']
+CC['linknooptimize'] = []
 
 
 CC['warning1']  = ['-Wall']
 CC['warning2']  = ['-Wall'] 
 if gccVersion[0]>=4 and gccVersion[1]>1:
-	CC['warning2'].append('-Werror=return-type')
+    CC['warning2'].append('-Werror=return-type')
 
 CC['warning3']  = CC['warning2']
 if gccVersion[0]>=4 and gccVersion[1]>1:
-	CC['warning3'].append('-Werror=switch')
+    CC['warning3'].append('-Werror=switch')
 
 CC['warning4']  = CC['warning3']+['-Winline']
 CC['nowarning'] = ['-w']
 
 
 if macos:
-	# on macos, the linker is not GNU ld
-	CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
-	CC['visibilityhidden'] = []
+    # on macos, the linker is not GNU ld
+    CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
+    CC['visibilityhidden'] = []
 else:
-	CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
-	CC['visibilityhidden'] = ['-fvisibility=hidden']
+    CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
+    CC['visibilityhidden'] = ['-fvisibility=hidden']
 if windows:
-	# dont need to add fPIC because all code is position independant
-	CC['sharedobject'] = []
+    # dont need to add fPIC because all code is position independant
+    CC['sharedobject'] = []
 else:
-	CC['sharedobject'] = ['-fPIC']
+    CC['sharedobject'] = ['-fPIC']
 
 CC['profile']   = ['-pg']
 CC['linkprofile']   = ['-pg']
@@ -97,9 +100,15 @@ CC['linkcover'] = ['-lgcov']
 #    sourcename.bbg
 #        A list of all arcs in the program flow graph. This allows gcov to reconstruct the program flow graph, so that it can compute all basic block and arc execution counts from the information in the sourcename.da file (this last file is the output from `-fprofile-arcs'). 
 
-
 CC['debug']   = ['-g3','-ggdb3','-gstabs3'] + CC['nooptimize']
-CC['release']   = CC['optimize'] 
+CC['linkdebug'] = CC['linknooptimize']
+
+CC['release'] = CC['optimize']
+CC['linkrelease'] = CC['linkoptimize']
+
+CC['production'] = CC['optimize']
+CC['linkproduction'] = CC['linkoptimize']
+
 
 # base : a toujours mettre
 CC['base']      = []
