@@ -12,6 +12,9 @@ cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
 
+CC = {}
+CC['version']   = '-dumpversion'
+
 def version( bin = ccBin ):
     import subprocess
     try:
@@ -24,8 +27,6 @@ gccVersion = [0,0,0]
 if gccVersionStr != 'unknown':
     gccVersion = [int(i) for i in gccVersionStr.split('.')]
 
-CC = {}
-CC['version']   = '-dumpversion'
 
 CC['define']   = '-D'
 
@@ -54,15 +55,18 @@ CC['linknooptimize'] = []
 
 
 CC['warning1']  = ['-Wall']
-CC['warning2']  = ['-Wall'] 
+CC['warning2']  = CC['warning1']
 if gccVersion[0]>=4 and gccVersion[1]>1:
     CC['warning2'].append('-Werror=return-type')
+#    CC['warning2'].append('-Werror=return-local-addr')
 
 CC['warning3']  = CC['warning2']
 if gccVersion[0]>=4 and gccVersion[1]>1:
     CC['warning3'].append('-Werror=switch')
+    CC['warning3'].append('-Werror=enum-compare')
 
-CC['warning4']  = CC['warning3']+['-Winline']
+CC['warning4']  = CC['warning3']+['-Wshadow', '-Winline']
+					  
 CC['nowarning'] = ['-w']
 
 
