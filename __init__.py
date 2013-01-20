@@ -1372,7 +1372,7 @@ class SConsProject:
 			moduleName,
 			sources=[], libraries=[],
 			swigFlags=[],
-			defaultSwigFlags=["-Wall"], # "-shadow", "-docstring"
+			defaultSwigFlags=["-Wall", "-small", "-fcompact", "-O", "-modern"], # "-shadow", "-docstring"
 			sourceLanguage = "c++"
 			):
 		'''
