@@ -1510,7 +1510,9 @@ class SConsProject:
 						if err:
 							if self.env['mode'] == 'production':
 								continue
-							raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(self.allTargets.keys())) )
+							allDeps = self.allTargets.keys()
+							allDeps.sort()
+							raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(allDeps)) )
 						targets = [self.allTargets[d] for d in dependenciesStr]
 					depsFromFile = [d[0] for d in targets if d[0]]
 					libsFromFile = [d[1] for d in targets if d[1]]
