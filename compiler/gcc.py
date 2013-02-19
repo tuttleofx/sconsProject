@@ -63,6 +63,7 @@ if gccVersion[0]>=4 and gccVersion[1]>1:
 CC['warning3']  = CC['warning2']
 if gccVersion[0]>=4 and gccVersion[1]>1:
     CC['warning3'].append('-Werror=switch')
+if gccVersion[0]>=4 and gccVersion[1]>2:
     CC['warning3'].append('-Werror=enum-compare')
 
 CC['warning4']  = CC['warning3']+['-Wshadow', '-Winline']
