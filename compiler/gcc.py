@@ -11,21 +11,12 @@ ccBin = 'gcc'
 cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
+ccVersionStr = 'unknown'
+ccVersion = [0,0,0]
+
 
 CC = {}
 CC['version']   = '-dumpversion'
-
-def version( bin = ccBin ):
-    import subprocess
-    try:
-        return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
-    except:
-        return 'unknown'
-
-gccVersionStr = version()
-gccVersion = [0,0,0]
-if gccVersionStr != 'unknown':
-    gccVersion = [int(i) for i in gccVersionStr.split('.')]
 
 
 CC['define']   = '-D'
@@ -54,20 +45,11 @@ CC['linkoptimize'] = [] #['-flto']
 CC['linknooptimize'] = []
 
 
-CC['warning1']  = ['-Wall']
-CC['warning2']  = CC['warning1']
-if gccVersion[0]>=4 and gccVersion[1]>1:
-    CC['warning2'].append('-Werror=return-type')
-#    CC['warning2'].append('-Werror=return-local-addr')
+CC['warning1'] = ['-Wall']
+CC['warning2'] = []
+CC['warning3'] = []
+CC['warning4'] = ['-Wshadow', '-Winline']
 
-CC['warning3']  = CC['warning2']
-if gccVersion[0]>=4 and gccVersion[1]>1:
-    CC['warning3'].append('-Werror=switch')
-if gccVersion[0]>=4 and gccVersion[1]>2:
-    CC['warning3'].append('-Werror=enum-compare')
-
-CC['warning4']  = CC['warning3']+['-Wshadow', '-Winline']
-					  
 CC['nowarning'] = ['-w']
 
 
@@ -126,4 +108,38 @@ CC['sse2']  = ['-msse2']
 CC['sse3']  = ['-msse3']
 CC['ssse3']  = ['-mssse3']
 CC['sse4']  = ['-msse4']
+
+def retrieveVersion(ccBinArg):
+    import subprocess
+    try:
+        return subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+    except:
+        return 'unknown'
+
+def setup(ccBinArg, cxxBinArg):
+    global ccVersionStr, ccVersion
+    
+    ccVersionStr = retrieveVersion(ccBinArg)
+    cxxVersionStr = retrieveVersion(cxxBinArg)
+    if ccVersionStr != cxxVersionStr:
+        print "Warning: CC version and CXX version doesn't match: CC version is %s and CXX version is %s\n" % (ccVersionStr, cxxVersionStr)
+    
+    if ccVersionStr != 'unknown':
+        ccVersion = [int(i) for i in ccVersionStr.split('.')]
+
+    if ccVersion[0]>=4 and ccVersion[1]>1:
+        CC['warning2'].append('-Werror=return-type')
+    #    CC['warning2'].append('-Werror=return-local-addr')
+
+    CC['warning3']  = CC['warning2']
+    if ccVersion[0]>=4 and ccVersion[1]>1:
+        CC['warning3'].append('-Werror=switch')
+    if ccVersion[0]>=4 and ccVersion[1]>2:
+        CC['warning3'].append('-Werror=enum-compare')
+    
+    # "warningX" contains all lower level warnings
+    for i in xrange(2, 4):
+        CC['warning'+str(i)].extend( CC['warning'+str(i-1)] )
+
+
 

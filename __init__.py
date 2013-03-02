@@ -210,10 +210,8 @@ class SConsProject:
 		print ':: osname             = ' + self.osname
 		print ':: sysplatform        = ' + self.sysplatform
 		print ':: hostname           = ' + self.hostname
-		ccversion = str(self.env['CCVERSION']) if 'CCVERSION' in self.env and self.env['CCVERSION'] else ''
-		print ':: compiler c         = ' + str(self.env['CC']) + ' (' + ccversion + ')'
-		cxxversion = str(self.env['CXXVERSION']) if ('CXXVERSION' in self.env) and (self.env['CXXVERSION']) else ''
-		print ':: compiler c++       = ' + str(self.env['CXX']) + ' (' + cxxversion + ')'
+		print ':: compiler c         = %s (%s)' % (self.env['CC'], self.env['CCVERSION'])
+		print ':: compiler c++       = %s (%s)' % (self.env['CXX'], self.env['CXXVERSION'])
 		print ':: parallel jobs      = %d' % (GetOption('num_jobs'))
 		if self.env['ccache']:
 			print ':: ccachedir          = ' + self.env['ccachedir']
@@ -465,8 +463,6 @@ class SConsProject:
 		else:
 			self.compiler    = compiler.gcc
 		self.CC         = self.compiler.CC
-		self.ccversion  = self.compiler.version(self.compiler.ccBin)
-		self.cxxversion = self.compiler.version(self.compiler.cxxBin)
 
 		# options from command line or configuration file
 		self.opts = self.createOptions(self.sconf_files, ARGUMENTS)
@@ -476,13 +472,15 @@ class SConsProject:
 		self.opts.Update(self.env)
 
 		if 'icecc' in self.env['CC']:
-			self.env['CCVERSION'] = self.compiler.version(self.env['ICECC_CC'])
-			self.env['CXXVERSION'] = self.compiler.version(self.env['ICECC_CXX'])
+			self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CC'])
+			self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CXX'])
 			self.env['ENV']['ICECC_CC'] = self.env['ICECC_CC']
 			self.env['ENV']['ICECC_CXX'] = self.env['ICECC_CXX']
+			self.compiler.setup(self.env['ICECC_CC'], self.env['ICECC_CXX'])
 		else:
-			self.env['CCVERSION'] = self.compiler.version(self.env['CC'])
-			self.env['CXXVERSION'] = self.compiler.version(self.env['CXX'])
+			self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['CC'])
+			self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['CXX'])
+			self.compiler.setup(self.env['CC'], self.env['CXX'])
 
 		# select the environment from user options
 		compilerName = self.env['compiler']

@@ -5,6 +5,8 @@ cxxBin = 'cl'
 linkBin = 'link'
 linkxxBin = 'link'
 
+ccVersionStr = 'unknown'
+ccVersion = [0,0,0]
 
 CC = {}
 CC['define']   = '/D'
@@ -67,10 +69,19 @@ CC['ssse3'] = ['/arch:SSSE3']
 CC['sse4']  = ['/arch:SSE4']
 
 
-def version( bin = 'cl' ):
+def retrieveVersion(ccBinArg):
     import subprocess
     try:
         # todo
-        return 'unknown' #subprocess.Popen( [bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
+        return 'unknown' #subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE  ).communicate()[0].strip()
     except:
         return 'unknown'
+
+
+def setup(ccBinArg, cxxBinArg):
+    global ccVersionStr, ccVersion
+    
+    ccVersionStr = retrieveVersion(ccBinArg)
+    cxxVersionStr = retrieveVersion(cxxBinArg)
+
+
