@@ -103,6 +103,7 @@ class SConsProject:
 	libs_help         = [] # temporary list of librairies already added to help
 	libs_error        = [] # list of libraries with autoconf error
 	allLibsChecked    = [] # temporary list of librairies already checked
+	removedFromDefaultTargets = {}
 	env               = Environment( tools=[
                                             'packaging',
                                             'doxygen',
@@ -514,7 +515,7 @@ class SConsProject:
 		opts.Add(BoolVariable('profile', 'Build with profiling support', False))
 		opts.Add(BoolVariable('cover', 'Build with cover support', False))
 		opts.Add(BoolVariable('clean', 'Remove all the build directory', False))
-		opts.Add(BoolVariable('ignore_errors', 'Ignore any configuration errors', False))
+		opts.Add(BoolVariable('ignore_configure_errors', 'Ignore "configure" errors. The default target will only build the possible targets', False))
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
 		opts.Add(BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
 		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
@@ -522,7 +523,7 @@ class SConsProject:
 		opts.Add('default', 'Default objects to build', 'all')
 		opts.Add('aliases', 'A list of custom aliases.', [])
 		opts.Add('jobs', 'Parallel jobs', '1')
-		opts.Add(BoolVariable('check_libs', 'Disable lib checking', True))
+		opts.Add(BoolVariable('check_libs', 'Enable/Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
@@ -724,13 +725,17 @@ class SConsProject:
 				if lib.error:
 					print '\t', lib.error
 			sys.stdout.write(self.env['color_clear'])
-			if not self.env['ignore_errors']:
-				print ''' '''
-				print '''Configure errors... Can't start compilation!'''
-				print '''See config.log to check the problem details.'''
-				print ''' '''
-				print '''Use ignore_errors=1 to try to compile without fixing the problem. Maybe you can build a subpart of the project.'''
-				print ''' '''
+			if not self.env['ignore_configure_errors']:
+				print ''
+				print ''
+				print ''
+				print '    Errors during the configure. Some external libraries are missing.'
+				print '    See "config.log" file to check the errors.'
+				print ''
+				print '    You could ignore these errors and build the possible targets.'
+				print '        >>> scons ignore_configure_errors=1'
+				print ''
+				print ''
 				Exit(1)
 			sys.stdout.write(self.env['color_clear'])
 
@@ -772,7 +777,7 @@ class SConsProject:
 		
 		# register function to display compilation status at the end
 		# to avoid going through if SCons raises an exception (error in a SConscript)
-		atexit.register(utils.display_build_status)
+		atexit.register(utils.display_build_status, self.removedFromDefaultTargets)
 
 
 #-------------------------------- Autoconf ------------------------------------#
@@ -831,21 +836,36 @@ class SConsProject:
 			lib.initEnv(self, env)
 
 		if self.needConfigure():
+			libs_error = []
 			for lib, level in allLibs:
 				if not lib.enabled(env):
 					print 'Target "'+name+'" compiled without "'+lib.name+'" library.'
 				else:
-					self.checkLibrary( lib )
+					checkStatus = True
+					if not self.checkLibrary( lib ):
+						checkStatus = False
 
 					if not lib.configure(self, env):
-						if lib not in self.libs_error:
-							self.libs_error.append(lib)
+						checkStatus = False
 					else:
 						conf = env.Configure()
 						if not lib.check(self, conf):
-							if lib not in self.libs_error:
-								self.libs_error.append(lib)
+							checkStatus = False
 						env = conf.Finish()
+					if not checkStatus:
+						libs_error.append(lib)
+			
+			#print '-- name:', name
+			#print '-- libs_error:', libs_error
+			#print '-- allLibs:', [a[0].name for a in allLibs]
+			if 'SconsProject_missingDependencies' not in env:
+				env['SconsProject_missingDependencies'] = []
+			env['SconsProject_missingDependencies'].extend([l.name for l in libs_error])
+			#print '-- SconsProject_missingDependencies:', env['SconsProject_missingDependencies']
+			
+			for lib in libs_error:
+				if lib not in self.libs_error:
+					self.libs_error.append(lib)
 
 		for lib, level in allLibs:
 			lib.postconfigure(self, env, level)
@@ -860,16 +880,16 @@ class SConsProject:
 		a check on lib.
 		'''
 		if lib.checkDone:
-			return
+			return True
 
 		# if it's an internal library, no check
 		if lib.sconsNode:
-			return
+			return True
 		
 		if lib.name in self.allLibsChecked:
 			#print 'Already checked ', lib.name
 			lib.checkDone = True
-			return
+			return True
 		
 		#print '_'*20
 		#print 'checkLibrary: ', lib.name
@@ -877,10 +897,11 @@ class SConsProject:
 		if not self.needCheck():
 			lib.checkDone = True
 			self.allLibsChecked.append( lib.name )
-			return
+			return True
 
 		dependencies = self.uniqLibs( self.findLibsDependencies(lib) )
 
+		checkStatus = True
 		#print "_"*50
 		#print "lib.name:", lib.name
 		#print "dependencies:", [d.name for d in dependencies]
@@ -903,18 +924,18 @@ class SConsProject:
 		for a, level in dependencies:
 			a.configure(self, check_env)
 		if not lib.configure(self, check_env):
-			if lib not in self.libs_error:
-				self.libs_error.append(lib)
+			checkStatus = False
 		check_conf = check_env.Configure()
 		for a, level in dependencies:
 			a.check(self, check_conf)
 		if not lib.check(self, check_conf):
-			if lib not in self.libs_error:
-				self.libs_error.append(lib)
+			checkStatus = False
 		check_env = check_conf.Finish()
 
 		lib.checkDone = True
 		self.allLibsChecked.append( lib.name )
+		
+		return checkStatus
 
 	def uniqLibs(self, allLibs):
 		'''
@@ -1047,6 +1068,17 @@ class SConsProject:
 		self.allTargets[publicName if publicName else target] = (None,dstLibChecker)
 		return dstLibChecker
 
+
+	def declareTarget(self, localEnv, target, targetName=None):
+		missingDeps = localEnv.get('SconsProject_missingDependencies', [])
+		#print 'target:', targetName if targetName else target
+		#print 'missingDeps:', missingDeps
+		if missingDeps:
+			self.removedFromDefaultTargets[targetName if targetName else target] = missingDeps
+			return
+		localEnv.Alias( 'all', target )
+
+
 	def StaticLibrary( self, target,
 			sources=[], dirs=[], libraries=[], includes=[],
 			env=None, localEnvFlags={}, replaceLocalEnvFlags={}, externEnvFlags={}, globalEnvFlags={},
@@ -1141,7 +1173,7 @@ class SConsProject:
 				dstLibInstall = localEnv.Install( self.inOutputLib(), dstLib )
 
 		localEnv.Alias( target, dstLibInstall )
-		localEnv.Alias( 'all', target )
+		self.declareTarget(localEnv, target)
 
 		if self.windows:
 			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
@@ -1165,6 +1197,7 @@ class SConsProject:
 
 		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
+
 
 	def SharedLibrary( self, target,
 				sources=[], dirs=[], libraries=[], includes=[],
@@ -1254,7 +1287,7 @@ class SConsProject:
 				dstLibInstall = localEnv.Install( self.inOutputLib(), dstLib )
 
 		localEnv.Alias( target, dstLibInstall )
-		localEnv.Alias( 'all', target )
+		self.declareTarget(localEnv, target)
 
 		if self.windows:
 			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
@@ -1351,7 +1384,7 @@ class SConsProject:
 
 		dstInstall = localEnv.Install( installDir if installDir else self.inOutputBin(), dst ) if install else dst
 		localEnv.Alias( target, dstInstall )
-		localEnv.Alias( 'all', target )
+		self.declareTarget(localEnv, target)
 
 		if self.windows:
 			l_headers = self.scanFiles( l_dirs, accept=['*.h', '*.hpp', '*.tcc', '*.inl', '*.H'] ) + headers
@@ -1413,8 +1446,9 @@ class SConsProject:
 		pyBindingEnv.Requires( pyBindingModule, initFile )
 
 		pyBindingEnv.Alias( 'python', pyBindingModule )
-		
-		
+		self.declareTarget(pyBindingEnv, pyBindingModule, packageName)
+
+
 	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
@@ -1540,6 +1574,7 @@ class SConsProject:
 			if l_libraries:
 				localEnv.Depends( dst, [lib.libs for lib in l_libraries] )
 		return allDst
+
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):
