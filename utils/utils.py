@@ -43,7 +43,7 @@ def build_status():
 		failures_message = ''
 	return (status, failures_message)
 
-def display_build_status():
+def display_build_status(removedFromDefaultTargets):
 	'''
     Display the build status.  Called by atexit.
 	Here you could do all kinds of complicated things.
@@ -61,6 +61,11 @@ def display_build_status():
 		print "|                                                                              |"
 		print "|                               build succeeded                                |"
 		print "|______________________________________________________________________________|" + colors['clear']
+		if removedFromDefaultTargets:
+			print "\nSome targets have been removed from default targets, due to missing dependencies:"
+			for k, v in removedFromDefaultTargets.iteritems():
+				print " * '%s': %s" % (k, str(v))
+			print "\nSee 'config.log' to see the configure errors."
 	print failures_message
 
 

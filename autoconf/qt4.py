@@ -122,7 +122,12 @@ class Qt4Checker(LibWithHeaderChecker):
 		
 		# don't need emitter with qt4
 		env['BUILDERS']['Uic'].emitter = None
-		
+
+		if env['mode'] != 'debug' :
+			env.AppendUnique( CPPDEFINES = 'QMLJSDEBUGGER' )
+			env.AppendUnique( CPPDEFINES = 'QT_DECLARATIVE_DEBUG' )  # QtQuick 1
+			#env.AppendUnique( CPPDEFINES = 'QT_QML_DEBUG' )  # QtQuick 2
+
 		return BaseLibChecker.configure(self, project, env)
 	
 	def check(self, project, conf):
