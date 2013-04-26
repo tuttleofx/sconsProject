@@ -117,6 +117,7 @@ class SConsProject:
 		'''
 		Initialisation of variables depending on computer.
 		'''
+		self.allTargets = {}
 		if self.windows:
 			self.packagetype    = 'msi'
 		else:
@@ -285,6 +286,8 @@ class SConsProject:
 			elif relativePath.startswith('#'):
 				return os.path.join(self.dir, relativePath[1:])
 			elif os.path.isabs(relativePath):
+				if relativePath.startswith(self.dir_output_build):
+					return os.path.join(self.dir, relativePath[len(self.dir_output_build)+1:])
 				return relativePath
 			return os.path.join(cdir, relativePath)
 		else:
@@ -1050,6 +1053,7 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		self.allTargets[publicName if publicName else target] = (None,dstLibChecker)
 		return dstLibChecker
 
 	def StaticLibrary( self, target,
@@ -1175,6 +1179,7 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
 	def SharedLibrary( self, target,
@@ -1293,6 +1298,10 @@ class SConsProject:
 			else:
 				setattr(self.libs, target, dstLibChecker)
 
+		if publicName:
+			localEnv.Alias( publicName, dstLibInstall )
+		
+		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
 	def Program( self, target,
@@ -1384,9 +1393,60 @@ class SConsProject:
 				env = localEnv,
 				)
 
+		self.allTargets[target] = (dstInstall,None)
 		return dstInstall
 
 
+	def pySwigBinding( self,
+			packageName,
+			moduleName,
+			sources=[], libraries=[],
+			swigFlags=[],
+			defaultSwigFlags=["-Wall", "-small", "-fcompact", "-O", "-modern"], # "-shadow", "-docstring"
+			sourceLanguage = "c++"
+			):
+		'''
+		Declare a Swig binding module.
+
+		packageName: name of the containing package
+		moduleName: name of the module itself
+		sources: ".i" files. Generally one file for a package.
+		libraries: lib dependencies
+		swigFlags: add flags to swig
+		defaultSwigFlags: to overide the default swig flags
+		sourceLanguage: by default "c++".
+		'''
+		packageOutputDir = self.inOutputDir( os.path.join('python', packageName))
+
+		pyBindingEnv = self.createEnv( [
+			self.libs.python,
+			self.libs.pthread,
+			] + libraries, name=packageName )
+
+		pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags )
+		pyBindingEnv.AppendUnique( SWIGPATH = pyBindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+		pyBindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+		pyBindingEnv.Replace( SHLIBPREFIX = '' )
+		if self.macos:
+			pyBindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
+
+		pyBindingModule = self.SharedLibrary(
+				target = '_' + moduleName,
+				sources = sources,
+				env = pyBindingEnv,
+				installDir = packageOutputDir,
+				publicName = packageName
+			)
+
+		initFile = pyBindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
+									[ Mkdir('${TARGET.dir}'),
+									  Touch('$TARGET'),
+									])
+		pyBindingEnv.Requires( pyBindingModule, initFile )
+
+		pyBindingEnv.Alias( 'python', pyBindingModule )
+		
+		
 	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
@@ -1432,50 +1492,84 @@ class SConsProject:
 
 		return dst
 
-	def ScriptTests( self, target=None, sources=[], dirs=[], env=None, libraries=[], dependencies=[], envFlags={}, procEnvFlags={},
-	                         accept=['test*.py'], reject=['@'] ):
+	def ScriptTests( self, target=None, sources=[], dirs=[], checkDependencies=True, env=None, libraries=[], dependencies=[], envFlags={}, procEnvFlags={},
+							 accept=['test*.py'], reject=['@'] ):
 		'''
 		This target is a list of python script files to execute.
+		
+		If checkDependencies is True, it will check the first line of the script:
+		"# scons: " and a list of dependencies
+		These could be libraries which will configure your environment
+		or just build dependencies needed to run the test.
 		'''
 		l_target = target
 		if target is None:
 			l_target = self.getDirs(0)
-		
+
 		l_sources = self.asList(sources)
 		l_dirs = self.asList(dirs)
 		l_libraries = self.asList(libraries)
 		l_dependencies = self.asList(dependencies)
-		
+
 		if l_dirs:
 			l_sources += self.scanFiles( l_dirs, accept, reject, inBuildDir=True )
 
 		if not l_sources:
 			raise RuntimeError( 'No source files for the target: ' + str(l_target) )
-		
-		localEnv = None
-		localLibraries = l_libraries
-		if env:
-			localEnv = env.Clone()
-			if 'SconsProjectLibraries' in localEnv:
-				localLibraries += localEnv['SconsProjectLibraries']
-			self.appendLibsToEnv(localEnv, localLibraries)
-		else:
-			# if no environment we create a new one
-			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
-
-		if envFlags:
-			localEnv.AppendUnique( **envFlags )
-		if procEnvFlags:
-			for k, v in procEnvFlags.iteritems():
-				localEnv.PrependENVPath( k, v )
 
 		# create the target
 		allDst = []
 		for s in l_sources:
-			dst = localEnv.ScriptTest( source=s, target=l_target )
-			allDst.append(dst)
 
-		return dst
+			libsFromFile = []
+			depsFromFile = []
+			if checkDependencies:
+				scriptFilename = self.getRealAbsoluteCwd(s)
+				firstline = file(scriptFilename, 'r').readline()
+				sconsDepPattern = '# scons:'
+				if firstline.startswith(sconsDepPattern):
+					dependenciesStr = firstline[len(sconsDepPattern):].split()
+					targets = []
+					if dependenciesStr == ['all']:
+						targets = self.allTargets.values()
+					else:
+						err = []
+						for d in dependenciesStr:
+							if d not in self.allTargets:
+								err.append(d)
+						if err:
+							if self.env['mode'] == 'production':
+								continue
+							raise ValueError( ('''Some dependencies of the scripttest "%s" doesn't exist.\nMissing deps:\n    %s\nExisting dependencies are:\n    %s\n''') % (scriptFilename, str(err), str(self.allTargets.keys())) )
+						targets = [self.allTargets[d] for d in dependenciesStr]
+					depsFromFile = [d[0] for d in targets if d[0]]
+					libsFromFile = [d[1] for d in targets if d[1]]
+
+			localEnv = None
+			localLibraries = l_libraries + libsFromFile
+			if env:
+				localEnv = env.Clone()
+				if 'SconsProjectLibraries' in localEnv:
+					localLibraries += localEnv['SconsProjectLibraries']
+				self.appendLibsToEnv(localEnv, localLibraries)
+			else:
+				# if no environment we create a new one
+				localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
+
+			if envFlags:
+				localEnv.AppendUnique( **envFlags )
+			if procEnvFlags:
+				for k, v in procEnvFlags.iteritems():
+					localEnv.PrependENVPath( k, v )
+				dst = localEnv.ScriptTest( source=s, target=l_target )
+				allDst.append(dst)
+			if depsFromFile:
+				localEnv.Depends( dst, depsFromFile )
+			if l_dependencies:
+				localEnv.Depends( dst, l_dependencies )
+			if l_libraries:
+				localEnv.Depends( dst, [lib.libs for lib in l_libraries] )
+		return allDst
 
 #-------------------- Automatic file/directory search -------------------------#
 	def asList(self, v):

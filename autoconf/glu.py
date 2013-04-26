@@ -1,10 +1,7 @@
 from _external import *
 from gl import *
 
-glu = LibWithHeaderChecker(
-		'GLU' if not windows else 'GLU32',
-		['GL/glu.h'],
-		'c',
-		dependencies=[gl]
-	)
-
+if windows:
+    glu = LibWithHeaderChecker('GLU32', ['windows.h','GL/glu.h'], 'c', dependencies=[gl])   
+else : 
+    glu = LibWithHeaderChecker('GLU', ['GL/glu.h'], 'c', dependencies=[gl])
