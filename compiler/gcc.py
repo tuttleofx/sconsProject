@@ -11,21 +11,13 @@ ccBin = 'gcc'
 cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
+ccVersionStr = 'unknown'
+ccVersion = [0,0,0]
 
-def version( bin = ccBin ):
-	import subprocess
-	try:
-		return subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
-	except:
-		return 'unknown'
-
-gccVersionStr = version()
-gccVersion = [0,0,0]
-if gccVersionStr != 'unknown':
-	gccVersion = [int(i) for i in gccVersionStr.split('.')]
 
 CC = {}
 CC['version']   = '-dumpversion'
+
 
 CC['define']   = '-D'
 
@@ -33,51 +25,49 @@ CC['bigobj'] = ''
 CC['multithreadedlib'] = ''
 CC['singlethreadedlib'] = ''
 
-CC['optimize'] = ['-O2']#,
+CC['optimize'] = ['-O3'] #, '-flto']#,
                   #'-finline-limit=700',
                   #'--param large-function-growth=1000']
 # '--param inline-unit-growth=100','--param large-function-growth=1000'
 # -finline-limit par defaut 600
 CC['nooptimize'] =['-O0']
-#	-0s : optimise en vitesse mais aussi en taille
-#	-O9
-#	-funroll-loops
-#	-ffast-math
-#	-malign-double
-#	-mcpu=pentiumpro
-#	-march=pentiumpro
-#	-fomit-frame-pointer
-#	-O3
-#	-mcpu=pentiumpro
-#	-march=pentiumpro
-#	-fnonnull-objects
+# -0s : optimise en vitesse mais aussi en taille
+# -O9
+# -funroll-loops
+# -ffast-math
+# -malign-double
+# -mcpu=pentiumpro
+# -march=pentiumpro
+# -fomit-frame-pointer
+# -O3
+# -mcpu=pentiumpro
+# -march=pentiumpro
+# -fnonnull-objects
+
+CC['linkoptimize'] = [] #['-flto']
+CC['linknooptimize'] = []
 
 
-CC['warning1']  = ['-Wall']
-CC['warning2']  = ['-Wall'] 
-if gccVersion[0]>=4 and gccVersion[1]>1:
-	CC['warning2'].append('-Werror=return-type')
+CC['warning1'] = ['-Wall']
+CC['warning2'] = []
+CC['warning3'] = []
+CC['warning4'] = ['-Wshadow', '-Winline']
 
-CC['warning3']  = CC['warning2']
-if gccVersion[0]>=4 and gccVersion[1]>1:
-	CC['warning3'].append('-Werror=switch')
-
-CC['warning4']  = CC['warning3']+['-Winline']
 CC['nowarning'] = ['-w']
 
 
 if macos:
-	# on macos, the linker is not GNU ld
-	CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
-	CC['visibilityhidden'] = []
+    # on macos, the linker is not GNU ld
+    CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
+    CC['visibilityhidden'] = []
 else:
-	CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
-	CC['visibilityhidden'] = ['-fvisibility=hidden']
+    CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
+    CC['visibilityhidden'] = ['-fvisibility=hidden']
 if windows:
-	# dont need to add fPIC because all code is position independant
-	CC['sharedobject'] = []
+    # dont need to add fPIC because all code is position independant
+    CC['sharedobject'] = []
 else:
-	CC['sharedobject'] = ['-fPIC']
+    CC['sharedobject'] = ['-fPIC']
 
 CC['profile']   = ['-pg']
 CC['linkprofile']   = ['-pg']
@@ -100,9 +90,15 @@ CC['linkcover'] = ['-lgcov']
 #    sourcename.bbg
 #        A list of all arcs in the program flow graph. This allows gcov to reconstruct the program flow graph, so that it can compute all basic block and arc execution counts from the information in the sourcename.da file (this last file is the output from `-fprofile-arcs'). 
 
-
 CC['debug']   = ['-g3','-ggdb3','-gstabs3'] + CC['nooptimize']
-CC['release']   = CC['optimize'] 
+CC['linkdebug'] = CC['linknooptimize']
+
+CC['release'] = CC['optimize']
+CC['linkrelease'] = CC['linkoptimize']
+
+CC['production'] = CC['optimize']
+CC['linkproduction'] = CC['linkoptimize']
+
 
 # base : a toujours mettre
 CC['base']      = []
@@ -115,4 +111,38 @@ CC['sse2']  = ['-msse2']
 CC['sse3']  = ['-msse3']
 CC['ssse3']  = ['-mssse3']
 CC['sse4']  = ['-msse4']
+
+def retrieveVersion(ccBinArg):
+    import subprocess
+    try:
+        return subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+    except:
+        return 'unknown'
+
+def setup(ccBinArg, cxxBinArg):
+    global ccVersionStr, ccVersion
+    
+    ccVersionStr = retrieveVersion(ccBinArg)
+    cxxVersionStr = retrieveVersion(cxxBinArg)
+    if ccVersionStr != cxxVersionStr:
+        print "Warning: CC version and CXX version doesn't match: CC version is %s and CXX version is %s\n" % (ccVersionStr, cxxVersionStr)
+    
+    if ccVersionStr != 'unknown':
+        ccVersion = [int(i) for i in ccVersionStr.split('.')]
+
+    if ccVersion[0]>=4 and ccVersion[1]>1:
+        CC['warning2'].append('-Werror=return-type')
+    #    CC['warning2'].append('-Werror=return-local-addr')
+
+    CC['warning3']  = CC['warning2']
+    if ccVersion[0]>=4 and ccVersion[1]>1:
+        CC['warning3'].append('-Werror=switch')
+    if ccVersion[0]>=4 and ccVersion[1]>2:
+        CC['warning3'].append('-Werror=enum-compare')
+    
+    # "warningX" contains all lower level warnings
+    for i in xrange(2, 4):
+        CC['warning'+str(i)].extend( CC['warning'+str(i-1)] )
+
+
 

@@ -1,4 +1,8 @@
 from _external import *
 
-freetype = LibWithHeaderChecker('freetype', 'ft2build.h', 'c')
+if windows:
+    freetype = LibWithHeaderChecker('freetype', ['ft2build.h'], 'c')
+else:
+    from fontconfig import *
+    freetype = LibWithHeaderChecker('freetype', 'ft2build.h', 'c', dependencies=[fontconfig] )
 

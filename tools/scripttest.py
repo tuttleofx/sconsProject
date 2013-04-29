@@ -77,10 +77,12 @@ def ScriptTest(env, source, **kwargs):
 	
 	scripttest = env.ExecScriptTest( source+'.scripttest', source )
 	
-	env.Alias( os.path.splitext(os.path.basename(source))[0], scripttest)
+	fileBaseName = os.path.splitext(os.path.basename(source))[0]
+	env.Alias( '-'.join(['scripttest', fileBaseName]), scripttest )
 
+	target.append(fileBaseName)
 	# Build one alias for each element of the target list.
-	for i in range(1,len(target)+1):
+	for i in xrange(1,len(target)+1):
 		env.Alias('-'.join(target[0:i]), scripttest)
 
 	return scripttest

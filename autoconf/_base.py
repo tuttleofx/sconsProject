@@ -153,8 +153,7 @@ class BaseLibChecker(object):
 		#conf.env.Append( LINKFLAGS = fwk )
 		#conf.env.Append( CCFLAGS = fwk ) # ?
 		conf.env.Append( FRAMEWORKS = p_framework )
-		self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
-		return True
+		return self.privateCheckLibWithHeader( conf, libs=[], header=header, language=language )
 
 	def privateCheckLib( self, conf, libs ):
 		if conf.env['check_libs'] and not self.checkDone:
@@ -171,8 +170,7 @@ class BaseLibChecker(object):
 		p_framework = asList(framework)
 		#conf.env.Append( LINKFLAGS = reduce(add, [ ['-framework',f] for f in framework], []) )
 		conf.env.Append( FRAMEWORKS = p_framework )
-		self.privateCheckLib( conf, libs=[] )
-		return True
+		return self.privateCheckLib( conf, libs=[] )
 
 	def CheckLibWithHeader( self, conf, libs, header, language, call=False ):
 		if self.useFramework(conf.env):

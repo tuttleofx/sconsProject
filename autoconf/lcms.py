@@ -1,3 +1,3 @@
 from _external import *
 
-lcms = LibWithHeaderChecker('lcms', ['lcms.h'], 'c')
+lcms = LibWithHeaderChecker('lcms2', ['lcms2.h'], 'c')
