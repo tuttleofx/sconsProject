@@ -57,13 +57,13 @@ from _external import *
 opencv = LibWithHeaderChecker([
 								'opencv_calib3d', 
 								'opencv_core', 
-								'opencv_contrib' 
+								'opencv_contrib', 
 								'opencv_features2d', 
 								'opencv_flann', 
 								'opencv_gpu', 
 								'opencv_highgui', 
 								'opencv_imgproc', 
-								'opencv_java', 
+#								'opencv_java', 
 								'opencv_legacy', 
 								'opencv_ml', 
 								'opencv_nonfree', 
