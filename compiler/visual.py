@@ -11,6 +11,7 @@ CC['define']   = '/D'
 CC['exceptionsEnabled'] = '/EHsc' #'/GX'
 
 CC['multithreadedlib'] = '/MD'
+CC['multithreaded_static_lib'] = '/MT'
 CC['singlethreadedlib'] = '/ML'
 CC['bigobj'] = '/bigobj'
 
