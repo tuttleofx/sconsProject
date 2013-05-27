@@ -1482,6 +1482,8 @@ class SConsProject:
 		pyBindingEnv.Replace( SHLIBPREFIX = '' )
 		if self.macos:
 			pyBindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
+		if self.windows:
+		 	pyBindingEnv.Replace( SHLIBSUFFIX = '.pyd' ) # .dll not recognized
 
 		pyBindingModule = self.SharedLibrary(
 				target = '_' + moduleName,
