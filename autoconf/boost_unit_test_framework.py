@@ -12,7 +12,10 @@ class BoostUnittestframeworkChecker(BaseLibChecker):
     def configure(self, project, env):
         if not self.enabled(env):
             return True
-        env.Append( CCFLAGS = project.CC['define']+'BOOST_TEST_DYN_LINK' )
+        if windows:
+            env.Append( CCFLAGS = project.CC['define'])
+        else:
+            env.Append( CCFLAGS = project.CC['define']+'BOOST_TEST_DYN_LINK')
         return True
 
     def check(self, project, conf):

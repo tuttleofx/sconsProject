@@ -22,4 +22,6 @@ if ccVersionStr != 'unknown':
 
 # by default, same interface than gcc
 CC = gcc.CC
+# clang doesn't support the GCC debugging symbols flags
+CC['debug']   = ['-g'] + CC['nooptimize']
 
