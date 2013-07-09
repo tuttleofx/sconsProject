@@ -63,6 +63,7 @@ if SCons.Util.case_sensitive_suffixes('.h', '.H'):
 #cxx_suffixes = cplusplus.CXXSuffixes
 cxx_suffixes = [".c", ".cxx", ".cpp", ".cc"]
 
+# this function replace a given pattern (pat) by s_after inside the file fname
 def fileReplace(fname, pat, s_after):
     # first, see if the pattern is even in the file.
     with open(fname) as f:
@@ -80,6 +81,8 @@ def fileReplace(fname, pat, s_after):
         os.remove(fname)
         os.rename(out_fname, fname)
 
+# simplify very long useless includes such as #include "../../../../foo.hpp" with #include "./foo.hpp"
+# this is useful because moc generates very long relative includes that implies issues on windows OS.
 def simplifyInclude(target, source, env):
     fileReplace(target[0].rstr(), "#include\s+\"(\.\./)+", "#include \"" + os.getcwd().replace("\\", "/") + "/" );
     return None

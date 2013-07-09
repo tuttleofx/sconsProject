@@ -31,8 +31,11 @@ def join_if_basedir_not_empty( *dirs ):
 		return ''
 	return os.path.join(*dirs)
 
+# taken from http://scons.org/wiki/LongCmdLinesOnWin32
+# this is used to avoid 'command line too long' issues on MS windows OS
 class VisualCSpawn:
     def visualcspawn(self, sh, escape, cmd, args, env):
+        # run processes with Popen, this avoid to get 'command line too long' issues
         newargs = ' '.join(args[1:])
         cmdline = cmd + " " + newargs
         startupinfo = subprocess.STARTUPINFO()
@@ -48,6 +51,7 @@ class VisualCSpawn:
         return rv
 
 def setupSpawn( env ):
+	# only use spawn on win32 environments
 	if sys.platform == 'win32':
 		buf = VisualCSpawn()
 		buf.visualCSpawnEnv = env
@@ -191,6 +195,7 @@ class SConsProject:
 		#if self.windows:
 		self.env['ENV']['PATH'] = os.environ['PATH'] # access to the compiler (if not in '/usr/bin')
 
+# disabled win32 command line spawn until having a better test case.
 #		setupSpawn( self.env );
 
 		# scons optimizations...
@@ -203,6 +208,8 @@ class SConsProject:
 		self.env.SourceCode('.', None)
 		# as of SCons 0.98, you can set the Decider function on an environment. MD5-timestamp says if the timestamp matches, don't bother re-MD5ing the file. This can give huge speedups.
 		self.env.Decider('MD5-timestamp')
+		# This option tells SCons to intelligently cache implicit dependencies. It attempts to determine if the implicit dependencies have changed since the last build, and if so it will recalculate them. This is usually slower than using --implicit-deps-unchanged, but is also more accurate.
+		SetOption('implicit_cache', 1)
 		# This option tells SCons to intelligently cache implicit dependencies. It attempts to determine if the implicit dependencies have changed since the last build, and if so it will recalculate them. This is usually slower than using --implicit-deps-unchanged, but is also more accurate.
 		SetOption('implicit_cache', 1)
 		# By default SCons will calculate the MD5 checksum of every source file in your build each time it is run, and will only cache the checksum after the file is 2 days old. This default of 2 days is to protect from clock skew from NFS or revision control systems. You can tweak this delay using --max-drift=SECONDS where SECONDS is some number of seconds. Decreasing SECONDS can improve build speed by eliminating superfluous MD5 checksum calculations.
@@ -1702,5 +1709,3 @@ class SConsProject:
 		dirs.sort()
 		return dirs
 
-
-__all__ = ['SConsProject']
