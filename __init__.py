@@ -31,6 +31,27 @@ def join_if_basedir_not_empty( *dirs ):
 		return ''
 	return os.path.join(*dirs)
 
+class VisualCSpawn:
+    def visualcspawn(self, sh, escape, cmd, args, env):
+        newargs = ' '.join(args[1:])
+        cmdline = cmd + " " + newargs
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, startupinfo=startupinfo, shell = False, env = env)
+        data, err = proc.communicate()
+        rv = proc.wait()
+        if rv:
+            print "====="
+            print err
+            print "====="
+        return rv
+
+def setupSpawn( env ):
+	if sys.platform == 'win32':
+		buf = VisualCSpawn()
+		buf.visualCSpawnEnv = env
+		env['SPAWN'] = buf.visualcspawn
 
 class SConsProject:
 	'''
@@ -111,7 +132,7 @@ class SConsProject:
                                             'scripttest',
                                             ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
-	
+
 	allVisualProjects = []
 
 	def __init__(self):
@@ -169,6 +190,8 @@ class SConsProject:
 
 		#if self.windows:
 		self.env['ENV']['PATH'] = os.environ['PATH'] # access to the compiler (if not in '/usr/bin')
+
+#		setupSpawn( self.env );
 
 		# scons optimizations...
 		# http://www.scons.org/wiki/GoFastButton
@@ -668,7 +691,6 @@ class SConsProject:
 		if not env['colors']:
 			for c in ['color_clear', 'color_red', 'color_redB', 'color_green', 'color_blue', 'color_blueB', 'color_yellow', 'color_brown', 'color_violet', 'color_autoconf', 'color_header', 'color_title', 'color_compile', 'color_link', 'color_install', 'color_info', 'color_success', 'color_warning', 'color_fail', 'color_error']:
 				env[c] = ''
-
 
 	def SConscript(self, dirs=[], exports=[]):
 		'''

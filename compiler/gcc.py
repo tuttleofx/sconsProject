@@ -23,6 +23,7 @@ CC['define']   = '-D'
 
 CC['bigobj'] = ''
 CC['multithreadedlib'] = ''
+CC['multithreaded_static_lib'] = ''
 CC['singlethreadedlib'] = ''
 
 CC['optimize'] = ['-O3'] #, '-flto']#,
