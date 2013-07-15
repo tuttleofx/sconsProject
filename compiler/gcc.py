@@ -56,10 +56,9 @@ CC['nowarning'] = ['-w']
 if macos:
     # on macos, the linker is not GNU ld
     CC['sharedNoUndefined'] = ['-Wl,-undefined,error']
-    CC['visibilityhidden'] = []
 else:
     CC['sharedNoUndefined'] = ['-Wl,--no-undefined'] #['-Wl,--no-allow-shlib-undefined','-lld-linux']
-    CC['visibilityhidden'] = ['-fvisibility=hidden']
+CC['visibilityhidden'] = ['-fvisibility=hidden']
 if windows:
     # dont need to add fPIC because all code is position independant
     CC['sharedobject'] = []
