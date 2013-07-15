@@ -1132,7 +1132,7 @@ class SConsProject:
 			localEnv = self.createEnv( libraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1254,7 +1254,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1368,7 +1368,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1483,7 +1483,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:
