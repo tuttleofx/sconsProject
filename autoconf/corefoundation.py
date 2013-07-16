@@ -1,6 +1,6 @@
 from _external import *
 
 corefoundation = LibWithHeaderChecker('CoreFoundation',
-                                      'CoreFoundation.h',
+                                      'CoreFoundation/CoreFoundation.h',
                                       'c++',
                                       name='corefoundation')
