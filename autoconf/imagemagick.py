@@ -21,6 +21,14 @@ if windows:
 		name='imagemagick',
 		#dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, ltdl]
         )
+elif macos:
+	imagemagick = LibWithHeaderChecker(
+		['MagickCore'],
+		['magick/MagickCore.h'],
+		'c',
+		name='imagemagick',
+		dependencies=[lcms, tiff, freetype, jpeg, bz2, z, m, gomp, pthread, ltdl]
+        )
 else:
 	imagemagick = LibWithHeaderChecker(
 		['MagickCore'],
