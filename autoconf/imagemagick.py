@@ -14,28 +14,34 @@ from ltdl import *
 # imagemagick C API
 
 if windows:
-	imagemagick = LibWithHeaderChecker(
-		['MagickCore'],
-		['magick/MagickCore.h'],
-		'c',
-		name='imagemagick',
-		#dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, ltdl]
+    imagemagick = LibWithHeaderChecker(
+        ['MagickCore'],
+        ['magick/MagickCore.h'],
+        'c',
+        name='imagemagick',
+        #dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, ltdl]
         )
 elif macos:
-	imagemagick = LibWithHeaderChecker(
-		['MagickCore'],
-		['magick/MagickCore.h'],
-		'c',
-		name='imagemagick',
-		dependencies=[lcms, tiff, freetype, jpeg, bz2, z, m, gomp, pthread, ltdl]
+    # Unfortunately, by default ImageMagick is linked with X11,
+    # but it can also be configured/installed without X11 support,
+    # which is better for OSX (no need to package X11 with ImageMagick,
+    # and no conflict between OpenGL libraries)
+    # With MacPorts, ImageMagick should be installed with the +no_x11 variant:
+    # sudo port install ImageMagick +no_x11
+    imagemagick = LibWithHeaderChecker(
+        ['MagickCore'],
+        ['magick/MagickCore.h'],
+        'c',
+        name='imagemagick',
+        dependencies=[lcms, tiff, freetype, jpeg, bz2, z, m, gomp, pthread, ltdl]
         )
 else:
-	imagemagick = LibWithHeaderChecker(
-		['MagickCore'],
-		['magick/MagickCore.h'],
-		'c',
-		name='imagemagick',
-		dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl]
+    imagemagick = LibWithHeaderChecker(
+        ['MagickCore'],
+        ['magick/MagickCore.h'],
+        'c',
+        name='imagemagick',
+        dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl]
         )
 
 
