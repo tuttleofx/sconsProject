@@ -658,7 +658,8 @@ class SConsProject:
 		'''
 		Some options are used to modify others.
 		'''
-
+		#env.PrependENVPath('MSVS_VERSION', '9.0')
+		#env['MSVS_VERSION'] = '9.0'
 		env.PrependENVPath('INCLUDE', self.env['ENVINC'])
 		env.PrependENVPath('PATH', self.env['ENVPATH'])
 		env.PrependENVPath('LIB', self.env['ENVLIBPATH'])
@@ -1268,6 +1269,8 @@ class SConsProject:
 
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
 
+		#print "target:", target
+		localEnv['PDB'] = str(target) + '.pdb'
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
 
