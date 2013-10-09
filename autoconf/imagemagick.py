@@ -33,7 +33,7 @@ elif macos:
         ['magick/MagickCore.h'],
         'c',
         name='imagemagick',
-        dependencies=[lcms, tiff, freetype, jpeg, bz2, z, m, gomp, pthread, ltdl]
+        dependencies=[lcms, tiff, freetype, jpeg, bz2, z, m, pthread, ltdl]
         )
 else:
     imagemagick = LibWithHeaderChecker(
