@@ -8,7 +8,7 @@ rawDependencies = [
 	]
 
 if linux:
-    from gomp import *
+	from gomp import *
 	rawDependencies.append(gomp)
 
 
