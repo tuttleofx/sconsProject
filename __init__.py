@@ -1427,7 +1427,11 @@ class SConsProject:
 			self.libs.pthread,
 			] + libraries, name=packageName )
 
-		pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags )
+		pythonVersion = pyBindingEnv['version_python'].split('.')
+		pythonMajorVersion = int(pythonVersion[0]) if pythonVersion and pythonVersion[0] else 0
+		swigPython3Flag = ['-py3'] if pythonMajorVersion == 3 else []
+
+		pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
 		pyBindingEnv.AppendUnique( SWIGPATH = pyBindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
 		pyBindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
 		pyBindingEnv.Replace( SHLIBPREFIX = '' )
