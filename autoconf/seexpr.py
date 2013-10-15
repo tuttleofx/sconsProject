@@ -1,8 +1,8 @@
 from _external import *
 
 seexpr = LibWithHeaderChecker(
-		'seexpr',
+		'SeExpr',
 		'SeExpression.h',
 		'c++',
+		name='seexpr'
 	)
-
