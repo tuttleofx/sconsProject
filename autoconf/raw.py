@@ -1,26 +1,21 @@
 from _external import *
 from m import *
-if not windows:
-    from gomp import *
 from lcms import *
 
+rawDependencies = [
+		m,			
+		lcms,
+	]
 
-if windows:
-	tmpDep = [
-			m,			
-			lcms,
-		]
-else:
-	tmpDep = [
-			m,
-			gomp,
-			lcms,
-		]
+if linux:
+	from gomp import *
+	rawDependencies.append(gomp)
+
 
 raw = LibWithHeaderChecker(
 		'raw',
 		'libraw/libraw.h',
 		'c',
-		dependencies = tmpDep
+		dependencies = rawDependencies
 	)
 

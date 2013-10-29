@@ -690,7 +690,8 @@ class SConsProject:
 		'''
 		Some options are used to modify others.
 		'''
-
+		#env.PrependENVPath('MSVS_VERSION', '9.0')
+		#env['MSVS_VERSION'] = '9.0'
 		env.PrependENVPath('INCLUDE', self.env['ENVINC'])
 		env.PrependENVPath('PATH', self.env['ENVPATH'])
 		env.PrependENVPath('LIB', self.env['ENVLIBPATH'])
@@ -1169,7 +1170,7 @@ class SConsProject:
 			localEnv = self.createEnv( libraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1297,7 +1298,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1317,6 +1318,8 @@ class SConsProject:
 			localEnv.Append( CPPFLAGS = [ '/FI' + self.getRealAbsoluteCwd() + '/' + precinc, '/Zm135' ] )
 			localEnv['PCH'] = localEnv.PCH( precsrc )[0]
 
+		#print "target:", target
+		localEnv['PDB'] = str(target) + '.pdb'
 		# create the target
 		dstLib = localEnv.SharedLibrary( target=target, source=sourcesFiles )
 
@@ -1417,7 +1420,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name=target )
 
 		# apply arguments to env
-		localIncludes = self.prepareIncludes(l_dirs+l_includes)
+		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
@@ -1483,7 +1486,11 @@ class SConsProject:
 			self.libs.pthread,
 			] + libraries, name=packageName )
 
-		pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags )
+		pythonVersion = pyBindingEnv['version_python'].split('.')
+		pythonMajorVersion = int(pythonVersion[0]) if pythonVersion and pythonVersion[0] else 0
+		swigPython3Flag = ['-py3'] if pythonMajorVersion == 3 else []
+
+		pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
 		pyBindingEnv.AppendUnique( SWIGPATH = pyBindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
 		pyBindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
 		pyBindingEnv.Replace( SHLIBPREFIX = '' )
@@ -1542,7 +1549,7 @@ class SConsProject:
 			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
 
 		# apply arguments to env
-		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_dirs+l_includes) )
+		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_includes) )
 		if localEnvFlags:
 			localEnv.AppendUnique( **localEnvFlags )
 		if replaceLocalEnvFlags:

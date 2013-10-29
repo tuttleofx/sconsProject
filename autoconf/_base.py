@@ -100,12 +100,14 @@ class BaseLibChecker(object):
 		if self.enabled(env,'flags_'+self.name):
 			env.AppendUnique( CPPFLAGS=env['flags_'+self.name] )
 			env.AppendUnique( LINKFLAGS=env['flags_'+self.name] )
+			env.AppendUnique( SHLINKFLAGS=env['flags_'+self.name] )
 
 		if self.enabled(env,'cppflags_'+self.name):
 			env.AppendUnique( CPPFLAGS=env['cppflags_'+self.name] )
 
 		if self.enabled(env,'linkflags_'+self.name):
 			env.AppendUnique( LINKFLAGS=env['linkflags_'+self.name] )
+			env.AppendUnique( SHLINKFLAGS=env['linkflags_'+self.name] )
 
 		if self.enabled(env,'defines_'+self.name):
 			env.AppendUnique( CPPDEFINES=env['defines_'+self.name] )
