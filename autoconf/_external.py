@@ -86,7 +86,6 @@ class HeaderChecker(BaseLibChecker):
 		'''
 		Particular case, which allow to add things after all libraries checks.
 		'''
-		env.AppendUnique( LIBS = self.getLibs(env) )
 		return True
 
 	def check(self, project, conf):

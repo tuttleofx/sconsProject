@@ -44,14 +44,20 @@ class Qt5Checker(LibWithHeaderChecker):
                                           'QtGui',
                                           'QtOpenGL',
 					  'QtWidgets',
-                                          'QtPrintSuppport',
+                                          'QtNetwork',
+                                          'QtPrintSupport',
+                                          'QtWebKit',
+                                          'QtWebKitWidgets',
 					],
 				  uiFiles = [],
 				  defines = ['QT_NO_KEYWORDS'],
 				  useLocalIncludes = True ):
 		self.name  = 'qt5'
 		postfix = '' if not windows else '5'
-		self.libs = [ m + postfix for m in modules]
+                for m in modules:
+                    realName = m + postfix
+                    if realName not in self.libs:
+                        self.libs.append( realName )
 		self.uiFiles =self.getAbsoluteCwd(uiFiles)
 		self.defines = defines[:]
 		self.useLocalIncludes = useLocalIncludes
