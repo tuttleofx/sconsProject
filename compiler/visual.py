@@ -70,6 +70,8 @@ CC['sse3']  = ['/arch:SSE3']
 CC['ssse3'] = ['/arch:SSSE3']
 CC['sse4']  = ['/arch:SSE4']
 
+# needed for compatibility with qt5 precompiled library
+CC['wchar'] = ['/Zc:wchar_t-']
 
 def retrieveVersion(ccBinArg):
     import subprocess
