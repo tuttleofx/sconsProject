@@ -77,7 +77,11 @@ def UnitTest(env, source, **kwargs):
 	
 	test = env.Program( target='-'.join( target ), source=source )
 	
-	unittest = env.ExecUnitTest( test[0].abspath+'.unittest', test )
+	execEnv = env
+	if 'execEnv' in kwargs:
+		execEnv = kwargs['execEnv']
+
+	unittest = execEnv.ExecUnitTest( test[0].abspath+'.unittest', test )
 	
 	# Build one alias for each element of the target list.
 	for i in range(1,len(target)+1):
