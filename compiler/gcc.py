@@ -96,8 +96,9 @@ CC['production'] = CC['optimize']
 CC['linkproduction'] = CC['linkoptimize']
 
 
-# base : a toujours mettre
-CC['base']      = []
+# -ftemplate-depth-1024: A limit on the template instantiation depth is needed to detect endless recursions during template class instantiation.
+# ANSI/ISO C++ conforming programs must not rely on a maximum depth greater than 17 (changed to 1024 in C++11)
+CC['base']      = ['-ftemplate-depth-1024']
 CC['linkbase']  = []
 
 
