@@ -112,7 +112,9 @@ CC['sse4']  = ['-msse4']
 def retrieveVersion(ccBinArg):
     import subprocess
     try:
-        return subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+        versionStr = subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+        # print 'gcc version: ', versionStr
+        return versionStr
     except:
         return 'unknown'
 
