@@ -41,7 +41,7 @@ def execute_ScriptTest(target, source, env):
 	# Execute the test.
 	errcode = 0
 	with open(writingFilename, 'w') as writingFile:
-		errcode = subprocess.call([env['SCRIPTTESTXX'], app, env['SCRIPTTESTFLAGS']], env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
+		errcode = subprocess.call([env['SCRIPTTESTXX'], app] + env['SCRIPTTESTFLAGS'].split(' '), env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
 
 	for line in open(writingFilename, 'r').readlines():
 		sys.stdout.write( "    " + line )
