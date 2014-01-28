@@ -131,7 +131,7 @@ class _Automoc(object):
 			debug = int(env.subst('$QT_DEBUG'))
 		except ValueError:
 			debug = 0
-		
+
 		# some shortcuts used in the scanner
 		splitext = SCons.Util.splitext
 		objBuilder = getattr(env, self.objBuilderName)
@@ -154,16 +154,16 @@ class _Automoc(object):
 		out_sources = source[:]
 
 		for obj in SCons.Util.flatten(source):
-			if not obj.has_builder():
-				# binary obj file provided
-				if debug:
-					print "scons: qt: '%s' seems to be a binary. Discarded." % str(obj)
-				continue
-			cpp = obj.sources[0]
+			if not isinstance(obj, SCons.Node.Node) or not obj.has_builder():
+ 				# binary obj file provided
+ 				if debug:
+ 					print "scons: qt: '%s' seems to be a binary. Discarded." % str(obj)
+ 				continue
+ 			cpp = obj.sources[0]
 			if not splitext(str(cpp))[1] in cxx_suffixes:
 				if debug:
 					print "scons: qt: '%s' is no cxx file. Discarded." % str(cpp) 
-				# c or fortran source
+					# c or fortran source
 				continue
 			#cpp_contents = comment.sub('', cpp.get_text_contents())
 			cpp_contents = cpp.get_text_contents()
@@ -194,8 +194,7 @@ class _Automoc(object):
 				# (to be included in cpp)
 				moc = env.Moc(cpp)
 				env.Ignore(moc, moc)
-				if debug:
-					print "scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(cpp), str(moc))
+				print "scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(cpp), str(moc))
 				#moc.source_scanner = SCons.Defaults.CScan
 		# restore the original env attributes (FIXME)
 		objBuilder.env = objBuilderEnv
