@@ -1517,11 +1517,13 @@ class SConsProject:
 		self.declareTarget(pyBindingEnv, pyBindingModule, packageName)
 
 
-	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
+	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], execLibraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
 	                         externEnvFlags={}, globalEnvFlags={}, dependencies=[],
 	                         accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'] ):
 		'''
 		To create a program and expose it in the project to be simply used by other targets.
+
+		:param execLibraries: libraries used to setup the UnitTest environment and added to build dependencies
 		'''
 		l_target = target
 		if target is None:
@@ -1529,6 +1531,8 @@ class SConsProject:
 		l_sources = self.asList(sources)
 		l_dirs = self.asList(dirs)
 		l_libraries = self.asList(libraries)
+		l_execLibraries = self.asList(execLibraries)
+		l_dependencies = self.asList(dependencies)
 		l_includes = self.asList(includes)
 
 		if l_dirs:
@@ -1548,6 +1552,9 @@ class SConsProject:
 			# if no environment we create a new one
 			localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
 
+		localExecEnv = localEnv.Clone()
+		self.appendLibsToEnv(localExecEnv, l_execLibraries)
+
 		# apply arguments to env
 		localEnv.AppendUnique( CPPPATH = self.prepareIncludes(l_includes) )
 		if localEnvFlags:
@@ -1558,7 +1565,12 @@ class SConsProject:
 			localEnv.AppendUnique( **globalEnvFlags )
 
 		# create the target
-		dst = localEnv.UnitTest( target=l_target, source=l_sources )
+		dst = localEnv.UnitTest( target=l_target, source=l_sources, execEnv=localExecEnv )
+
+		if l_dependencies:
+			localEnv.Depends( dst, l_dependencies )
+		if l_execLibraries:
+			localEnv.Depends( dst, [i.libs for i in l_execLibraries] )
 
 		return dst
 
@@ -1658,9 +1670,9 @@ class SConsProject:
 	def recursiveDirs(self, root):
 		'''List of subdirectories.'''
 		if sys.version_info < (2, 6):
-			return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root)])
+			return [directory for directory, subdirs, files in os.walk(root) if directory.rfind("CVS") == -1]
 		else:
-			return filter((lambda a: a.rfind("CVS") == -1), [a[0] for a in os.walk(root, followlinks=True)])
+			return [directory for directory, subdirs, files in os.walk(root, followlinks=True) if directory.rfind("CVS") == -1]
 
 	def unique(self, seq):
 		'''Removes duplicates. Element order preserved.'''
@@ -1683,7 +1695,7 @@ class SConsProject:
 			for pattern in l_accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
 		for pattern in l_reject:
-			sources = filter((lambda a: a.rfind(pattern) == -1), sources)
+			sources = [a for a in sources if a.rfind(pattern) == -1]
 		# to relative paths (to allow scons variant_dir to recognize files...)
 		def toLocalDirs(d): return d.replace(realcwd + os.sep, '')
 		lsources = self.inBuildDir(sources) if inBuildDir else map(toLocalDirs, sources)

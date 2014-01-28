@@ -100,8 +100,9 @@ CC['production'] = CC['optimize']
 CC['linkproduction'] = CC['linkoptimize']
 
 
-# base : a toujours mettre
-CC['base']      = []
+# -ftemplate-depth-1024: A limit on the template instantiation depth is needed to detect endless recursions during template class instantiation.
+# ANSI/ISO C++ conforming programs must not rely on a maximum depth greater than 17 (changed to 1024 in C++11)
+CC['base']      = ['-ftemplate-depth-1024']
 CC['linkbase']  = []
 
 
@@ -115,7 +116,9 @@ CC['sse4']  = ['-msse4']
 def retrieveVersion(ccBinArg):
     import subprocess
     try:
-        return subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+        versionStr = subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
+        # print 'gcc version: ', versionStr
+        return versionStr
     except:
         return 'unknown'
 
