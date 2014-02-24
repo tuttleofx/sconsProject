@@ -38,10 +38,14 @@ def execute_ScriptTest(target, source, env):
 	if os.path.exists(failedFilename):
 		os.remove(failedFilename)
 
+	cmd = [env['SCRIPTTESTXX'], app] + env['SCRIPTTESTFLAGS'].split(' ')
+
+	print( ' '.join(cmd) )
+
 	# Execute the test.
 	errcode = 0
 	with open(writingFilename, 'w') as writingFile:
-		errcode = subprocess.call([env['SCRIPTTESTXX'], app] + env['SCRIPTTESTFLAGS'].split(' '), env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
+		errcode = subprocess.call(cmd, env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
 
 	for line in open(writingFilename, 'r').readlines():
 		sys.stdout.write( "    " + line )
