@@ -51,16 +51,14 @@ def display_build_status(removedFromDefaultTargets):
 	status, failures_message = build_status()
 	if status == 'failed':
 		print colors['fail']
-		print " ______________________________________________________________________________ "
-		print "|                                                                              |"
-		print "|                                 build failed                                 |"
-		print "|______________________________________________________________________________|" + colors['clear']
+		print ">>>"
+		print ">>> build failed"
+		print ">>>" + colors['clear']
 	elif status == 'ok':
 		print colors['success']
-		print " ______________________________________________________________________________ "
-		print "|                                                                              |"
-		print "|                               build succeeded                                |"
-		print "|______________________________________________________________________________|" + colors['clear']
+		print ">>>"
+		print ">>> build succeeded"
+		print ">>>" + colors['clear']
 		if removedFromDefaultTargets:
 			print "\nSome targets have been removed from default targets, due to missing dependencies:"
 			for k, v in removedFromDefaultTargets.iteritems():
@@ -78,10 +76,9 @@ def clear_atexit_excepthook(exctype, value, traceback):
     atexit._exithandlers[:] = []
     sys.__excepthook__(exctype, value, traceback)
     print colors['fail']
-    print " ______________________________________________________________________________ "
-    print "|                                                                              |"
-    print "|                                 error SCons                                  |"
-    print "|______________________________________________________________________________|" + colors['clear']
+    print ">>>"
+    print ">>> scons error"
+    print ">>>" + colors['clear']
 
 # this don't work...
 sys.excepthook = clear_atexit_excepthook
