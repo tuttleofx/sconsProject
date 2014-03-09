@@ -2,7 +2,10 @@ from SCons.Script.SConscript import SConsEnvironment
 
 import os
 import sys
-import subprocess
+import warnings
+with warnings.catch_warnings():
+	warnings.simplefilter("ignore")
+	import subprocess32
 
 windows = os.name.lower() == "nt" and sys.platform.lower().startswith("win")
 
@@ -45,7 +48,12 @@ def execute_ScriptTest(target, source, env):
 	# Execute the test.
 	errcode = 0
 	with open(writingFilename, 'w') as writingFile:
-		errcode = subprocess.call(cmd, env=procenv, stdout=writingFile, stderr=subprocess.STDOUT)
+		try:
+			errcode = subprocess32.call(cmd, env=procenv, stdout=writingFile, stderr=subprocess32.STDOUT, timeout=60)
+		except subprocess32.TimeoutExpired as e:
+			writingFile.write( "scriptttest timeout expired: " + str(e) )
+			print("scriptttest timeout expired.")
+			errcode = -1
 
 	for line in open(writingFilename, 'r').readlines():
 		sys.stdout.write( "    " + line )

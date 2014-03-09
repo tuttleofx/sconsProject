@@ -14,7 +14,6 @@ import atexit
 import os
 import socket
 import string
-import subprocess
 import getpass
 
 import autoconf
