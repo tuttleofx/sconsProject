@@ -768,6 +768,7 @@ class SConsProject:
 		# user can add some aliases
 		for v in self.env['aliases']:
 			self.env.Alias(v[0], v[1:])
+		self.env.Alias('test', ('unittest', 'scripttest'))
 
 		# by default compiles the target 'all'
 		if isinstance(self.env['default'], str):
