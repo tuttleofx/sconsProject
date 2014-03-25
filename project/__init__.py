@@ -1,42 +1,18 @@
 """
 project package.
 """
-
-# from SCons.Environment import *
-# from SCons.Script import *
-import SCons
-from SCons.Environment import Environment
-from SCons.Script import (SetOption,
-                          ARGUMENTS,
-                          Variables,
-                          EnumVariable,
-                          BoolVariable,
-                          PathVariable,
-                          SConsignFile,
-                          GetOption,
-                          VariantDir,
-                          Dir,
-                          SConscript,
-                          Glob,
-                          Mkdir,
-                          Touch,
-                          Help,
-                          Default,
-                          FindInstalledFiles,
-                          )
-
-import sys
-from time import *
 import atexit
+import getpass
 import os
 import socket
 import string
-import getpass
+import sys
+import time
 
-from .. import autoconf
-from .. import compiler
-from ..utils import *
-from ..utils.colors import *
+import SCons
+
+from .. import autoconf, compiler, utils
+
 
 def join_if_basedir_not_empty( *dirs ):
 	'''
@@ -91,7 +67,7 @@ class SConsProject:
 	project.end()
 	########################################
 	'''
-	now               = strftime("%Y-%m-%d_%Hh%Mm%S", localtime())
+	now               = time.strftime("%Y-%m-%d_%Hh%Mm%S", time.localtime())
 	osname            = os.name.lower()
 	sysplatform       = sys.platform.lower()
 	hostname          = socket.gethostname()
@@ -120,13 +96,13 @@ class SConsProject:
 	libs_error        = [] # list of libraries with autoconf error
 	allLibsChecked    = [] # temporary list of librairies already checked
 	removedFromDefaultTargets = {}
-	env               = Environment( tools=[
+	env               = SCons.Environment.Environment( tools=[
                                             'packaging',
                                             'doxygen',
                                             'unittest',
                                             'scripttest',
                                             ] + (['msvs'] if windows else []),
-                                         toolpath=[os.path.join(dir_sconsProject,'tools')] )
+                                         toolpath=[os.path.join(dir_sconsProject, '..', 'tools')] )
 
 	allVisualProjects = []
 
@@ -177,7 +153,7 @@ class SConsProject:
 		sconf_sconsProject = ['display', 'default']
 
 		self.sconf_files = [
-		                     os.path.join(self.dir_sconsProject, s)+'.sconf' for s in sconf_sconsProject
+		                     os.path.join(self.dir_sconsProject, '..', s)+'.sconf' for s in sconf_sconsProject
 		                   ] + [
 						     os.path.join(self.dir, s)+'.sconf' for s in sconf
 						   ]
@@ -197,9 +173,9 @@ class SConsProject:
 		# as of SCons 0.98, you can set the Decider function on an environment. MD5-timestamp says if the timestamp matches, don't bother re-MD5ing the file. This can give huge speedups.
 		self.env.Decider('MD5-timestamp')
 		# This option tells SCons to intelligently cache implicit dependencies. It attempts to determine if the implicit dependencies have changed since the last build, and if so it will recalculate them. This is usually slower than using --implicit-deps-unchanged, but is also more accurate.
-		SetOption('implicit_cache', 1)
+		SCons.Script.SetOption('implicit_cache', 1)
 		# By default SCons will calculate the MD5 checksum of every source file in your build each time it is run, and will only cache the checksum after the file is 2 days old. This default of 2 days is to protect from clock skew from NFS or revision control systems. You can tweak this delay using --max-drift=SECONDS where SECONDS is some number of seconds. Decreasing SECONDS can improve build speed by eliminating superfluous MD5 checksum calculations.
-		SetOption('max_drift', 60 * 15) # cache the checksum after max_drift seconds
+		SCons.Script.SetOption('max_drift', 60 * 15) # cache the checksum after max_drift seconds
 		# Normally you tell Scons about include directories by setting the CPPPATH construction variable, which causes SCons to search those directories when doing implicit dependency scans and also includes those directories in the compile command line. If you have header files that never or rarely change (e.g. system headers, or C run-time headers), then you can exclude them from CPPPATH and include them in the CCFLAGS construction variable instead, which causes SCons to ignore those include directories when scanning for implicit dependencies. Carefully tuning the include directories in this way can usually result in a dramatic speed increase with very little loss of accuracy.
 		# To achieve this we add a new variable 'EXTERNCPPPATH' which is the same as CPPPATH but without searching for implicit dependencies in those directories. So we always use EXTERNCPPPATH for external libraries.
 		self.env['_CPPINCFLAGS'] = '$( ${_concat(INCPREFIX, CPPPATH,       INCSUFFIX, __env__, RDirs, TARGET, SOURCE)} ' \
@@ -229,7 +205,7 @@ class SConsProject:
 		print ':: hostname           = ' + self.hostname
 		print ':: compiler c         = %s (%s)' % (self.env['CC'], self.env['CCVERSION'])
 		print ':: compiler c++       = %s (%s)' % (self.env['CXX'], self.env['CXXVERSION'])
-		print ':: parallel jobs      = %d' % (GetOption('num_jobs'))
+		print ':: parallel jobs      = %d' % (SCons.Script.GetOption('num_jobs'))
 		if self.env['ccache']:
 			print ':: ccachedir          = ' + self.env['ccachedir']
 		print(':' * 80)
@@ -256,7 +232,7 @@ class SConsProject:
 
 	def getAllAbsoluteCwd(self, relativePath=None):
 		'''
-		Returns current directory (in original path and VariantDir path) or relativePath in current directory.
+		Returns current directory (in original path and SCons.Script.VariantDir path) or relativePath in current directory.
 		Paths are absolute.
 		Returns a list.
 		'''
@@ -279,20 +255,21 @@ class SConsProject:
 				else:
 					return [relativePath]
 			else:
-				return [os.path.join(Dir('.').srcnode().abspath, relativePath),
-				        os.path.join(Dir('.').abspath, relativePath)]
+				return [os.path.join(SCons.Script.Dir('.').srcnode().abspath, relativePath),
+				        os.path.join(SCons.Script.Dir('.').abspath, relativePath)]
 		else:
-			return [Dir('.').srcnode().abspath,
-			        Dir('.').abspath]
+			return [SCons.Script.Dir('.').srcnode().abspath,
+			        SCons.Script.Dir('.').abspath]
 
 	def getRealAbsoluteCwd(self, relativePath=None):
 		'''
-		Returns original current directory (not inside the VariantDir) or relativePath in original current directory.
+		Returns original current directory (not inside the SCons.Script.VariantDir)
+		or relativePath in original current directory.
 		Paths are absolute.
 		'''
 		if isinstance(relativePath, list):
 			return [self.getRealAbsoluteCwd(rp) for rp in relativePath]
-		cdir = Dir('.').srcnode().abspath
+		cdir = SCons.Script.Dir('.').srcnode().abspath
 		if relativePath:
 			if isinstance(relativePath, SCons.Node.FS.Dir):
 				return relativePath.srcnode().abspath
@@ -313,7 +290,7 @@ class SConsProject:
 		'''
 		if isinstance(relativePath, list):
 			return [self.getAbsoluteCwd(rp) for rp in relativePath]
-		cdir = Dir('.').abspath
+		cdir = SCons.Script.Dir('.').abspath
 		if relativePath:
 			if relativePath.startswith('#'):
 				return os.path.join(self.dir_output_build, relativePath[1:])
@@ -324,7 +301,7 @@ class SConsProject:
 			return cdir
 
 	def getCwdInProject(self):
-		cdir = Dir('.').srcnode().abspath
+		cdir = SCons.Script.Dir('.').srcnode().abspath
 		return os.path.relpath(cdir, self.dir)
 
 	def getSubDirsAbsolutePath(self, current_dir=None):
@@ -460,7 +437,7 @@ class SConsProject:
 
 	def needConfigure(self):
 		'''If the target builds nothing, we don't need to call the configure function.'''
-		return not GetOption('clean') and not GetOption('help')
+		return not SCons.Script.GetOption('clean') and not SCons.Script.GetOption('help')
 
 	def needCheck(self):
 		'''If we check all libraries before compiling.'''
@@ -486,9 +463,9 @@ class SConsProject:
 
 		print self.env
 		# options from command line or configuration file
-		self.opts = self.createOptions(self.sconf_files, ARGUMENTS)
+		self.opts = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 		self.defineHiddenOptions(self.opts)
-		self.opts_help = self.createOptions(self.sconf_files, ARGUMENTS)
+		self.opts_help = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 
 		self.opts.Update(self.env)
 
@@ -522,7 +499,7 @@ class SConsProject:
 		'''
 		Define options.
 		'''
-		opts = Variables(filename, args)
+		opts = SCons.Script.Variables(filename, args)
 
 		def help_format(env, opt, help, default, actual, aliases):
 			alignment = ' '*(len(opt)+2)
@@ -530,20 +507,20 @@ class SConsProject:
 			return '%s%s%s  %s\n%s(default=%s, actual=%s)\n\n' % (self.env['color_title'], opt, self.env['color_clear'], multilineHelp, alignment, default, actual)
 		opts.FormatVariableHelpText = help_format
 
-		opts.Add(EnumVariable('mode', 'Compilation mode', 'production', allowed_values=self.modes))
-		opts.Add(BoolVariable('install', 'Install', False))
-		opts.Add(BoolVariable('profile', 'Build with profiling support', False))
-		opts.Add(BoolVariable('cover', 'Build with cover support', False))
-		opts.Add(BoolVariable('clean', 'Remove all the build directory', False))
-		opts.Add(BoolVariable('ignore_configure_errors', 'Ignore "configure" errors. The default target will only build the possible targets', False))
+		opts.Add(SCons.Script.EnumVariable('mode', 'Compilation mode', 'production', allowed_values=self.modes))
+		opts.Add(SCons.Script.BoolVariable('install', 'Install', False))
+		opts.Add(SCons.Script.BoolVariable('profile', 'Build with profiling support', False))
+		opts.Add(SCons.Script.BoolVariable('cover', 'Build with cover support', False))
+		opts.Add(SCons.Script.BoolVariable('clean', 'Remove all the build directory', False))
+		opts.Add(SCons.Script.BoolVariable('ignore_configure_errors', 'Ignore "configure" errors. The default target will only build the possible targets', False))
 #        opts.Add( BoolVariable( 'log',           'Enable output to a log file',                     False ) )
-		opts.Add(BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
-		opts.Add(PathVariable('ccachedir', 'Cache directory', 'ccache', PathVariable.PathAccept))
-		opts.Add(BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
+		opts.Add(SCons.Script.BoolVariable('ccache', 'Enable compiler cache system (ccache style)', False))
+		opts.Add(SCons.Script.PathVariable('ccachedir', 'Cache directory', 'ccache', SCons.Script.PathVariable.PathAccept))
+		opts.Add(SCons.Script.BoolVariable('colors', 'Using colors of the terminal', True if not self.windows else False))
 		opts.Add('default', 'Default objects to build', 'all')
 		opts.Add('aliases', 'A list of custom aliases.', [])
 		opts.Add('jobs', 'Parallel jobs', '1')
-		opts.Add(BoolVariable('check_libs', 'Enable/Disable lib checking', True))
+		opts.Add(SCons.Script.BoolVariable('check_libs', 'Enable/Disable lib checking', True))
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
@@ -555,7 +532,9 @@ class SConsProject:
 		opts.Add('ENVLIBPATH', 'Additional librairie path (at compilation)', [] if not self.windows else os.environ.get('LIB', '').split(':'))
 
 		if self.windows:
-			opts.Add(PathVariable('PROGRAMFILES', 'Program Files directory', os.environ.get('PROGRAMFILES', ''), PathVariable.PathAccept))
+			opts.Add(SCons.Script.PathVariable('PROGRAMFILES', 'Program Files directory',
+							   os.environ.get('PROGRAMFILES', ''),
+							   SCons.Script.PathVariable.PathAccept))
 
 		opts.Add('CPPPATH', 'Additional preprocessor paths', [])
 		opts.Add('CPPDEFINES', 'Additional preprocessor defines', [])
@@ -575,11 +554,15 @@ class SConsProject:
 
 		buildDirName = '.dist' # base dir name for all intermediate compilation objects
 		distDirName = 'dist'   # base dir name for output build
-		opts.Add(PathVariable('BUILDPATH', 'Top directory of compilation tree', self.dir, PathVariable.PathIsDir))
+		opts.Add(SCons.Script.PathVariable('BUILDPATH', 'Top directory of compilation tree',
+						   self.dir, SCons.Script.PathVariable.PathIsDir))
 		opts.Add('BUILDDIRNAME', 'Top directory of compilation tree', buildDirName)
-		opts.Add(PathVariable('DISTPATH', 'Top directory to output compiled files', self.dir, PathVariable.PathIsDir))
+		opts.Add(SCons.Script.PathVariable('DISTPATH', 'Top directory to output compiled files',
+						   self.dir, SCons.Script.PathVariable.PathIsDir))
 		opts.Add('DISTDIRNAME', 'Directory name to output compiled files', distDirName)
-		opts.Add(PathVariable('INSTALLPATH', 'Top directory to install compiled files', '${DISTPATH}/${DISTDIRNAME}', PathVariable.PathIsDirCreate))
+		opts.Add(SCons.Script.PathVariable('INSTALLPATH', 'Top directory to install compiled files',
+						   '${DISTPATH}/${DISTDIRNAME}',
+						   SCons.Script.PathVariable.PathIsDirCreate))
 
 		return opts
 
@@ -587,14 +570,14 @@ class SConsProject:
 		'''
 		Define basics options which don't need to be visible in the help.
 		'''
-		opts.Add(PathVariable('TOPDIR', 'Top directory', self.dir))
+		opts.Add(SCons.Script.PathVariable('TOPDIR', 'Top directory', self.dir))
 
 		opts.Add('osname', 'OS name', 'windows' if self.windows else 'unix')
 		opts.Add('osbits', 'OS bits', self.bits)
-		opts.Add(BoolVariable('unix', 'operating system', self.unix))
-		opts.Add(BoolVariable('linux', 'operating system', self.linux))
-		opts.Add(BoolVariable('windows', 'operating system', self.windows))
-		opts.Add(BoolVariable('macos', 'operating system', self.macos))
+		opts.Add(SCons.Script.BoolVariable('unix', 'operating system', self.unix))
+		opts.Add(SCons.Script.BoolVariable('linux', 'operating system', self.linux))
+		opts.Add(SCons.Script.BoolVariable('windows', 'operating system', self.windows))
+		opts.Add(SCons.Script.BoolVariable('macos', 'operating system', self.macos))
 		opts.Add('compiler', 'Choose compiler mode. This defines all flag system to use.', 'visual' if self.windows else 'gcc')
 
 		opts.Add('EXTERNCPPPATH', 'Additional preprocessor paths (like CPPPATH but without dependencies check)', [])
@@ -614,15 +597,15 @@ class SConsProject:
 		opts.Add('QT_MOCFROMHCOMSTR', 'display option', '$QT_MOCFROMHCOM')
 		opts.Add('QT_UICCOMSTR', 'display option', '$QT_UICCOM')
 
-		opts.Add('color_clear', 'color', colors['clear'])
-		opts.Add('color_red', 'color', colors['red'])
-		opts.Add('color_redB', 'color', colors['redB'])
-		opts.Add('color_green', 'color', colors['green'])
-		opts.Add('color_blue', 'color', colors['blue'])
-		opts.Add('color_blueB', 'color', colors['blueB'])
-		opts.Add('color_yellow', 'color', colors['yellow'])
-		opts.Add('color_brown', 'color', colors['brown'])
-		opts.Add('color_violet', 'color', colors['violet'])
+		opts.Add('color_clear', 'color', utils.colors.colors['clear'])
+		opts.Add('color_red', 'color', utils.colors.colors['red'])
+		opts.Add('color_redB', 'color', utils.colors.colors['redB'])
+		opts.Add('color_green', 'color', utils.colors.colors['green'])
+		opts.Add('color_blue', 'color', utils.colors.colors['blue'])
+		opts.Add('color_blueB', 'color', utils.colors.colors['blueB'])
+		opts.Add('color_yellow', 'color', utils.colors.colors['yellow'])
+		opts.Add('color_brown', 'color', utils.colors.colors['brown'])
+		opts.Add('color_violet', 'color', utils.colors.colors['violet'])
 
 		opts.Add('color_autoconf', 'color', '')
 		opts.Add('color_header', 'color', '')
@@ -635,7 +618,7 @@ class SConsProject:
 		opts.Add('color_success', 'color', '')
 		opts.Add('color_warning', 'color', '')
 		opts.Add('color_fail', 'color', '')
-		opts.Add('color_error', 'color', colors['error'])
+		opts.Add('color_error', 'color', utils.colors.colors['error'])
 
 
 	def applyOptionsOnProject(self):
@@ -658,13 +641,13 @@ class SConsProject:
 		# temporary files of SCons inside the build directory
 		self.env['CONFIGUREDIR'] = os.path.join(self.dir_output_build, 'sconf_temp')
 		self.env['CONFIGURELOG'] = os.path.join(self.dir_output_build, 'config.log')
-		SConsignFile(os.path.join(self.dir_output_build, 'sconsign.dblite'))
+		SCons.Script.SConsignFile(os.path.join(self.dir_output_build, 'sconsign.dblite'))
 
 		if self.env['ccache']:
 			if os.path.isabs(self.env['ccachedir']):
-				CacheDir(self.env['ccachedir'])
+				SCons.Script.CacheDir(self.env['ccachedir'])
 			else:
-				CacheDir(os.path.join(self.dir_output_build, self.env['ccachedir']))
+				SCons.Script.CacheDir(os.path.join(self.dir_output_build, self.env['ccachedir']))
 
 		try:
 			SetOption('num_jobs', int(self.env['jobs']))
@@ -695,10 +678,10 @@ class SConsProject:
 		'''
 		if not dirs:
 			sconscriptFilename = self.inBuildDir(self.getAbsoluteCwd('SConscript'))
-			SConscript( sconscriptFilename, exports=exports )
+			SCons.Script.SConscript( sconscriptFilename, exports=exports )
 		else:
 			for d in dirs:
-				SConscript( dirs=self.inBuildDir(d), exports=exports )
+				SCons.Script.SConscript( dirs=self.inBuildDir(d), exports=exports )
 
 	def begin(self):
 		'''
@@ -709,12 +692,12 @@ class SConsProject:
 		self.applyOptionsOnProject()
 
 		if self.env['clean']:
-			Execute(Delete(self.dir_output_build))
-			Exit(1)
+			SCons.Script.Execute(SCons.Script.Delete(self.dir_output_build))
+			SCons.Script.Exit(1)
 
 		self.printInfos()
 
-		VariantDir(self.dir_output_build, self.dir, duplicate=0)
+		SCons.Script.VariantDir(self.dir_output_build, self.dir, duplicate=0)
 
 
 	def end(self):
@@ -757,10 +740,10 @@ class SConsProject:
 				print '        >>> scons ignore_configure_errors=1'
 				print ''
 				print ''
-				Exit(1)
+				SCons.Script.Exit(1)
 			sys.stdout.write(self.env['color_clear'])
 
-		Help(
+		SCons.Script.Help(
 			 '''
 		-- Usefull scons options --
 			scons -Q               : making the SCons output less verbose
@@ -773,7 +756,7 @@ class SConsProject:
 	'''
 			 )
 
-		Help(
+		SCons.Script.Help(
 			 '''
 		-- Build options --
 			scons                  : build all plugins and programs
@@ -784,7 +767,7 @@ class SConsProject:
 	'''
 			 )
 
-		Help(self.opts_help.GenerateHelpText(self.env))
+		SCons.Script.Help(self.opts_help.GenerateHelpText(self.env))
 
 		# user can add some aliases
 		for v in self.env['aliases']:
@@ -793,13 +776,13 @@ class SConsProject:
 
 		# by default compiles the target 'all'
 		if isinstance(self.env['default'], str):
-			Default( self.env['default'].split() )
+			SCons.Script.Default( self.env['default'].split() )
 		else:
-			Default( self.env['default'] )
+			SCons.Script.Default( self.env['default'] )
 
 		# register function to display compilation status at the end
 		# to avoid going through if SCons raises an exception (error in a SConscript)
-		atexit.register(utils.display_build_status, self.removedFromDefaultTargets)
+		atexit.register(utils.utils.display_build_status, self.removedFromDefaultTargets)
 
 
 #-------------------------------- Autoconf ------------------------------------#
@@ -830,7 +813,7 @@ class SConsProject:
 		else:
 			env['SconsProjectLibraries'] = libs
 
-		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
+		opts_current = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 		self.defineHiddenOptions(opts_current)
 
 		allLibs = []
@@ -930,7 +913,7 @@ class SConsProject:
 
 		check_env = self.env.Clone()
 
-		check_opts = self.createOptions(self.sconf_files, ARGUMENTS)
+		check_opts = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 		self.defineHiddenOptions(check_opts)
 		for a, level in dependencies:
 			a.initOptions(self, check_opts)
@@ -1014,7 +997,7 @@ class SConsProject:
 				dst[k] = v
 
 	def prepareIncludes(self, dirs):
-		objDirs = [Dir(d) for d in self.getAllAbsoluteCwd(dirs)]
+		objDirs = [SCons.Script.Dir(d) for d in self.getAllAbsoluteCwd(dirs)]
 		objDirs = self.unique(objDirs)
 		return objDirs
 
@@ -1470,8 +1453,8 @@ class SConsProject:
 			)
 
 		initFile = pyBindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
-									[ Mkdir('${TARGET.dir}'),
-									  Touch('$TARGET'),
+									[ SCons.Script.Mkdir('${TARGET.dir}'),
+									  SCons.Script.Touch('$TARGET'),
 									])
 		pyBindingEnv.Requires( pyBindingModule, initFile )
 
@@ -1656,7 +1639,7 @@ class SConsProject:
 
 		for path in paths:
 			for pattern in l_accept:
-				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
+				sources += SCons.Script.Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
 		for pattern in l_reject:
 			sources = [a for a in sources if a.rfind(pattern) == -1]
 		# to relative paths (to allow scons variant_dir to recognize files...)
