@@ -1,12 +1,29 @@
-"""SConsProject
-
-The SConsProject module proposes a way to easily create the compilation system
-of your project with the minimum of information. It's an helper around SCons.
-
+"""
+project package.
 """
 
-from SCons.Environment import *
-from SCons.Script import *
+# from SCons.Environment import *
+# from SCons.Script import *
+import SCons
+from SCons.Environment import Environment
+from SCons.Script import (SetOption,
+                          ARGUMENTS,
+                          Variables,
+                          EnumVariable,
+                          BoolVariable,
+                          PathVariable,
+                          SConsignFile,
+                          GetOption,
+                          VariantDir,
+                          Dir,
+                          SConscript,
+                          Glob,
+                          Mkdir,
+                          Touch,
+                          Help,
+                          Default,
+                          FindInstalledFiles,
+                          )
 
 import sys
 from time import *
@@ -16,10 +33,10 @@ import socket
 import string
 import getpass
 
-import autoconf
-import compiler
-from utils import *
-from utils.colors import *
+from .. import autoconf
+from .. import compiler
+from ..utils import *
+from ..utils.colors import *
 
 def join_if_basedir_not_empty( *dirs ):
 	'''
@@ -110,7 +127,7 @@ class SConsProject:
                                             'scripttest',
                                             ] + (['msvs'] if windows else []),
                                          toolpath=[os.path.join(dir_sconsProject,'tools')] )
-	
+
 	allVisualProjects = []
 
 	def __init__(self):
@@ -172,7 +189,7 @@ class SConsProject:
 		# scons optimizations...
 		# http://www.scons.org/wiki/GoFastButton
 		#
-		# Next line is important, it deactivates tools search for default variable, just note that now in SConscript you have 
+		# Next line is important, it deactivates tools search for default variable, just note that now in SConscript you have
 		# to use env.Program(...) instead of simply Program().
 		SCons.Defaults.DefaultEnvironment(tools = [])
 		# Avoid RCS and SCCS scans by using env.SourceCode(".", None) - this is especially interesting if you are using lots of c or c++ headers in your program and that your file system is remote (nfs, samba).
@@ -460,10 +477,14 @@ class SConsProject:
 		# default values
 		if self.windows:
 			self.compiler    = compiler.visual
+		elif self.macos:
+			print dir(self.env)
+			self.compiler    = compiler.clang#compiler.clang
 		else:
 			self.compiler    = compiler.gcc
 		self.CC         = self.compiler.CC
 
+		print self.env
 		# options from command line or configuration file
 		self.opts = self.createOptions(self.sconf_files, ARGUMENTS)
 		self.defineHiddenOptions(self.opts)
@@ -532,10 +553,10 @@ class SConsProject:
 		opts.Add('ENVINC', 'Additional include path (at compilation)', [] if not self.windows else os.environ.get('INCLUDE', '').split(':'))
 		opts.Add('ENVPATH', 'Additional bin path (at compilation)', [])
 		opts.Add('ENVLIBPATH', 'Additional librairie path (at compilation)', [] if not self.windows else os.environ.get('LIB', '').split(':'))
-		
+
 		if self.windows:
 			opts.Add(PathVariable('PROGRAMFILES', 'Program Files directory', os.environ.get('PROGRAMFILES', ''), PathVariable.PathAccept))
-		
+
 		opts.Add('CPPPATH', 'Additional preprocessor paths', [])
 		opts.Add('CPPDEFINES', 'Additional preprocessor defines', [])
 		opts.Add('LIBPATH', 'Additional library paths', [])
@@ -775,7 +796,7 @@ class SConsProject:
 			Default( self.env['default'].split() )
 		else:
 			Default( self.env['default'] )
-		
+
 		# register function to display compilation status at the end
 		# to avoid going through if SCons raises an exception (error in a SConscript)
 		atexit.register(utils.display_build_status, self.removedFromDefaultTargets)
@@ -811,7 +832,7 @@ class SConsProject:
 
 		opts_current = self.createOptions(self.sconf_files, ARGUMENTS)
 		self.defineHiddenOptions(opts_current)
-		
+
 		allLibs = []
 		for eachlib in libs:
 			libdeps = self.findLibsDependencies(eachlib)
@@ -822,7 +843,7 @@ class SConsProject:
 		#print 'libs:', [a.name for a in libs]
 		#print 'allLibs:', [a.name for a in allLibs]
 		#print '-'*10
-		
+
 		for lib, level in allLibs:
 			if not lib.initOptions(self, opts_current):
 				if lib not in self.libs_error:
@@ -855,7 +876,7 @@ class SConsProject:
 						env = conf.Finish()
 					if not checkStatus:
 						libs_error.append(lib)
-			
+
 			#print '-- name:', name
 			#print '-- libs_error:', libs_error
 			#print '-- allLibs:', [a[0].name for a in allLibs]
@@ -863,7 +884,7 @@ class SConsProject:
 				env['SconsProject_missingDependencies'] = []
 			env['SconsProject_missingDependencies'].extend([l.name for l in libs_error])
 			#print '-- SconsProject_missingDependencies:', env['SconsProject_missingDependencies']
-			
+
 			for lib in libs_error:
 				if lib not in self.libs_error:
 					self.libs_error.append(lib)
@@ -886,12 +907,12 @@ class SConsProject:
 		# if it's an internal library, no check
 		if lib.sconsNode:
 			return True
-		
+
 		if lib.name in self.allLibsChecked:
 			#print 'Already checked ', lib.name
 			lib.checkDone = True
 			return True
-		
+
 		#print '_'*20
 		#print 'checkLibrary: ', lib.name
 
@@ -935,7 +956,7 @@ class SConsProject:
 
 		lib.checkDone = True
 		self.allLibsChecked.append( lib.name )
-		
+
 		return checkStatus
 
 	def uniqLibs(self, allLibs):
@@ -962,7 +983,7 @@ class SConsProject:
 				ll.extend( internFindLibDependencies(l, level+1) )
 			ll.append( (lib,level) )
 			return ll
-		
+
 		if not isinstance(libs, list):
 			libs = [libs]
 		ll = []
@@ -973,7 +994,7 @@ class SConsProject:
 
 # todo
 #    def Install(self):
-#        
+#
 #        env.AddPostAction(obj , Chmod(str(obj),bin_mode) )
 
 #-------------------------------- Autoconf ------------------------------------#
@@ -1025,7 +1046,7 @@ class SConsProject:
 		##print 'localincs:', localIncludes
 		#print 'local abs incs:', [os.path.normpath( self.getRealAbsoluteCwd(i) ) for i in localHeaders]
 		#print '-'*20
-		
+
 		# add EXTERNCPPPATH to the standard CPPPATH, to add those include paths to the visualProject
 		l_env.AppendUnique( CPPPATH = l_env['EXTERNCPPPATH'] )
 		l_env.Replace( CPPPATH = self.convertSconsPathToStr(l_env['CPPPATH']) )
@@ -1091,7 +1112,7 @@ class SConsProject:
 		'''
 		To create a StaticLibrary and expose it in the project to be simply used by other targets.
 		The shared option allows to create a static library compiled with position independant code (like in shared libraries).
-		
+
 		target: name of the target file
 		sources: list of source files
 		dirs: list of directories that contains the sources files
@@ -1102,7 +1123,7 @@ class SConsProject:
 		replaceLocalEnvFlags: defines some flags locally
 		externEnvFlags: defines some flags for external usage of the library (only other targets that use the current library will have these flags)
 		globalEnvFlags: defines some flags
-		dependencies: 
+		dependencies:
 		installDir: Destination directory to install the target
 		installAs: Full path of the fil to install
 		install: install the target (in the default or custom dir or renamed using installAs)
@@ -1149,12 +1170,12 @@ class SConsProject:
 				localEnv.AppendUnique( CCFLAGS = localEnv['SHCCFLAGS'] )
 			if 'SHLINKFLAGS' in localEnv:
 				localEnv.AppendUnique( LINKFLAGS = localEnv['SHLINKFLAGS'] )
-		
+
 		if 'ADDSRC' in localEnv:
 			sourcesFiles = sourcesFiles + localEnv['ADDSRC']
-		
+
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
-		
+
 		# create the target
 		dstLib = localEnv.StaticLibrary( target=target, source=sourcesFiles )
 
@@ -1163,7 +1184,7 @@ class SConsProject:
 		internalLibsDepends = [ l.sconsNode for l in libraries if l.sconsNode ] # if there is a sconsNode inside the library it's an internal lib
 		if internalLibsDepends:
 			localEnv.Depends( dstLib, internalLibsDepends )
-		
+
 		dstLibInstall = dstLib
 		if install:
 			if installDir:
@@ -1221,7 +1242,7 @@ class SConsProject:
 		replaceLocalEnvFlags: defines some flags locally
 		externEnvFlags: defines some flags for external usage of the library (only other targets that use the current library will have these flags)
 		globalEnvFlags: defines some flags
-		dependencies: 
+		dependencies:
 		installDir: Destination directory to install the target
 		installAs: Full path of the fil to install
 		install: install the target (in the default or custom dir or renamed using installAs)
@@ -1242,7 +1263,7 @@ class SConsProject:
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
-		
+
 		localEnv = None
 		localLibraries = l_libraries
 		if env:
@@ -1314,7 +1335,7 @@ class SConsProject:
 
 		if publicName:
 			localEnv.Alias( publicName, dstLibInstall )
-		
+
 		self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
 		return dstLibInstall
 
@@ -1337,7 +1358,7 @@ class SConsProject:
 		replaceLocalEnvFlags: defines some flags locally
 		externEnvFlags: defines some flags for external usage of the library (only other targets that use the current library will have these flags)
 		globalEnvFlags: defines some flags
-		dependencies: 
+		dependencies:
 		installDir: Destination directory to install the target
 		installAs: Full path of the fil to install
 		install: install the target (in the default or custom dir or renamed using installAs)
@@ -1358,7 +1379,7 @@ class SConsProject:
 
 		if not sourcesFiles:
 			raise RuntimeError( "No source files for the target: " + target )
-		
+
 		localEnv = None
 		localLibraries = l_libraries
 		if env:
@@ -1381,7 +1402,7 @@ class SConsProject:
 			localEnv.AppendUnique( **globalEnvFlags )
 
 		sourcesFiles = self.getAbsoluteCwd( sourcesFiles )
-		
+
 		# create the target
 		dst = localEnv.Program( target=target, source=sourcesFiles )
 
@@ -1481,7 +1502,7 @@ class SConsProject:
 
 		if not l_sources:
 			raise RuntimeError( 'No source files for the target: ' + str(l_target) )
-		
+
 		localEnv = None
 		localLibraries = l_libraries
 		if env:
@@ -1520,7 +1541,7 @@ class SConsProject:
 			accept=['test*.py'], reject=['@'] ):
 		'''
 		This target is a list of python script files to execute.
-		
+
 		If checkDependencies is True, it will check the first line of the script:
 		"# scons: " and a list of dependencies
 		These could be libraries which will configure your environment
@@ -1632,7 +1653,7 @@ class SConsProject:
 		paths = []
 		dd = self.getRealAbsoluteCwd(directory)
 		paths = self.recursiveDirs( dd ) if recursive else dd
-		
+
 		for path in paths:
 			for pattern in l_accept:
 				sources += Glob(os.path.join(path, pattern), strings=True) # string=True to return files as strings
