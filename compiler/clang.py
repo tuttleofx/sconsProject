@@ -1,6 +1,7 @@
 import os
 import sys
 import gcc
+import re
 
 name = 'clang'
 ccBin = 'clang'
@@ -36,7 +37,8 @@ def setup(ccBinArg, cxxBinArg):
         print "Warning: CC version and CXX version doesn't match: CC version is %s and CXX version is %s\n" % (ccVersionStr, cxxVersionStr)
 
     if ccVersionStr != 'unknown':
-        ccVersion = [int(i) for i in ccVersionStr.split('.')]
+        ccVersion = re.findall(r"\d+", ccVersionStr)[:3]
+        ccVersion = [int(i) for i in ccVersion]
 
     if ccVersion[0]>=4 and ccVersion[1]>1:
         CC['warning2'].append('-Werror=return-type')
