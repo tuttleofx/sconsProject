@@ -453,15 +453,14 @@ class SConsProject:
 		self.env.Tool('default')
 		# default values
 		if self.windows:
-			self.compiler    = compiler.visual
+			self.compiler = compiler.visual
 		elif self.macos:
 			print dir(self.env)
-			self.compiler    = compiler.clang#compiler.clang
+			self.compiler = compiler.clang
 		else:
-			self.compiler    = compiler.gcc
-		self.CC         = self.compiler.CC
+			self.compiler = compiler.gcc
+		self.CC = self.compiler.CC
 
-		print self.env
 		# options from command line or configuration file
 		self.opts = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 		self.defineHiddenOptions(self.opts)
