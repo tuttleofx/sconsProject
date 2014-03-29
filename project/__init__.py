@@ -468,6 +468,11 @@ class SConsProject:
 
 		self.opts.Update(self.env)
 
+		# select the environment from user options
+		compilerName = self.env['compiler']
+		self.compiler = eval( 'compiler.' + compilerName )
+		self.CC = self.compiler.CC
+
 		if 'icecc' in self.env['CC']:
 			self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CC'])
 			self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CXX'])
@@ -478,11 +483,6 @@ class SConsProject:
 			self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['CC'])
 			self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['CXX'])
 			self.compiler.setup(self.env['CC'], self.env['CXX'])
-
-		# select the environment from user options
-		compilerName = self.env['compiler']
-		self.compiler   = eval( 'compiler.' + compilerName )
-		self.CC         = self.compiler.CC
 
 		if self.windows:
 			if compilerName == 'visual':
