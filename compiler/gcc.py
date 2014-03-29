@@ -102,21 +102,21 @@ CC['base']      = ['-ftemplate-depth-1024']
 CC['linkbase']  = []
 
 
-
 CC['sse']   = ['-msse']
 CC['sse2']  = ['-msse2']
 CC['sse3']  = ['-msse3']
 CC['ssse3']  = ['-mssse3']
 CC['sse4']  = ['-msse4']
 
+
 def retrieveVersion(ccBinArg):
     import subprocess
     try:
         versionStr = subprocess.Popen( [ccBinArg, CC['version']], stdout=subprocess.PIPE, stderr=subprocess.PIPE ).communicate()[0].strip()
-        # print 'gcc version: ', versionStr
         return versionStr
     except:
         return 'unknown'
+
 
 def setup(ccBinArg, cxxBinArg):
     global ccVersionStr, ccVersion
@@ -142,6 +142,4 @@ def setup(ccBinArg, cxxBinArg):
     # "warningX" contains all lower level warnings
     for i in xrange(2, 4):
         CC['warning'+str(i)].extend( CC['warning'+str(i-1)] )
-
-
 
