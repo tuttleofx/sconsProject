@@ -22,11 +22,16 @@ CC['debug']   = ['-g'] + CC['nooptimize']
 
 #CC['stdlib'] = ['libc++']
 
+
 def retrieveVersion( bin = 'clang' ):
     import subprocess
-    versionMsg = subprocess.Popen( [bin, CC['version']], stdout=subprocess.PIPE).communicate()[0].strip()
-    versionStr = versionMsg.split()[3]
-    return versionStr
+    try:
+        versionMsg = subprocess.Popen([bin, CC['version']], stdout=subprocess.PIPE).communicate()[0].strip()
+        versionStr = versionMsg.split()[3]
+        return versionStr
+    except:
+        return 'unknown'
+
 
 def setup(ccBinArg, cxxBinArg):
     global ccVersionStr, ccVersion
