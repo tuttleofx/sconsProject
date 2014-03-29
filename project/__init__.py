@@ -812,8 +812,7 @@ class SConsProject:
 		else:
 			env['SconsProjectLibraries'] = libs
 
-		opts_current = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
-		self.defineHiddenOptions(opts_current)
+		opts_current = self.opts
 
 		allLibs = []
 		for eachlib in libs:
@@ -912,8 +911,7 @@ class SConsProject:
 
 		check_env = self.env.Clone()
 
-		check_opts = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
-		self.defineHiddenOptions(check_opts)
+		check_opts = self.opts
 		for a, level in dependencies:
 			a.initOptions(self, check_opts)
 		if not lib.initOptions(self, check_opts):
