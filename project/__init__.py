@@ -1457,6 +1457,7 @@ class SConsProject:
 
 		pyBindingEnv.Alias( 'python', pyBindingModule )
 		self.declareTarget(pyBindingEnv, pyBindingModule, packageName)
+		return pyBindingModule
 
 
 	def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], execLibraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
