@@ -648,10 +648,7 @@ class SConsProject:
             else:
                 SCons.Script.CacheDir(os.path.join(self.dir_output_build, self.env['ccachedir']))
 
-        try:
-            SetOption('num_jobs', int(self.env['jobs']))
-        except:
-            pass
+        SCons.Script.SetOption('num_jobs', int(self.env['jobs']))
 
         self.applyOptionsOnEnv(self.env)
 
