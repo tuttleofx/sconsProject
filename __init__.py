@@ -559,6 +559,8 @@ class SConsProject:
 		opts.Add('SHLIBSUFFIX', 'Specify the shared libraries suffix', '.dll' if self.windows else( '.dylib' if self.macos else '.so' ) )
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
+                opts.Add('AR', 'Specify the C Compiler', self.compiler.arBin)
+                opts.Add('RANLIB', 'Specify the C++ Compiler', self.compiler.ranlibBin)
 
 		opts.Add('SCRIPTTESTXX', 'Specify the script test binary', "nosetests")
 		opts.Add('SCRIPTTESTFLAGS', 'Specify the script test flags', "")

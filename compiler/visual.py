@@ -4,6 +4,8 @@ ccBin = 'cl'
 cxxBin = 'cl'
 linkBin = 'link'
 linkxxBin = 'link'
+arBin = ''
+ranlibBin = ''
 
 ccVersionStr = 'unknown'
 ccVersion = [0,0,0]

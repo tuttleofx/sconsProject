@@ -11,6 +11,8 @@ ccBin = 'gcc'
 cxxBin = 'g++'
 linkBin = ccBin
 linkxxBin = cxxBin
+arBin = 'ar'
+ranlibBin = 'ranlib'
 ccVersionStr = 'unknown'
 ccVersion = [0,0,0]
 

@@ -5,6 +5,8 @@ import gcc
 name = 'clang'
 ccBin = 'clang'
 cxxBin = 'clang++'
+arBin = 'ar'
+ranlibBin = 'ranlib'
 linkBin = ccBin
 linkxxBin = cxxBin
 
