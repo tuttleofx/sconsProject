@@ -556,6 +556,7 @@ class SConsProject:
 		opts.Add('aliases', 'A list of custom aliases.', [])
 		opts.Add('jobs', 'Parallel jobs', '1')
 		opts.Add(BoolVariable('check_libs', 'Enable/Disable lib checking', True))
+		opts.Add('SHLIBSUFFIX', 'Specify the shared libraries suffix', '.dll' if self.windows else( '.dylib' if self.macos else '.so' ) )
 		opts.Add('CC', 'Specify the C Compiler', self.compiler.ccBin)
 		opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
@@ -1296,7 +1297,7 @@ class SConsProject:
 		else:
 			# if no environment we create a new one
 			localEnv = self.createEnv( localLibraries, name=target )
-
+		
 		# apply arguments to env
 		localIncludes = self.prepareIncludes(l_includes)
 		localEnv.AppendUnique( CPPPATH = localIncludes )
