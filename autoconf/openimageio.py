@@ -3,6 +3,7 @@ from boost_filesystem import *
 from boost_regex import *
 from boost_system import *
 from boost_thread import *
+from openjpeg import *
 from half import *
 from dl import *
 
@@ -15,6 +16,7 @@ openimageio = LibWithHeaderChecker(
                 boost_regex,
                 boost_system,
                 boost_thread,
+                openjpeg,
                 half,
                 dl] )
 
