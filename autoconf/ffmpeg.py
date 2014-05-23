@@ -9,6 +9,8 @@ ffmpeg = LibWithHeaderChecker(
 			'avformat',
 			'avcodec',
 			'avutil',
+			'avfilter',
+			'swresample',
 		],
 		'libavformat/avformat.h',
 		'c',
