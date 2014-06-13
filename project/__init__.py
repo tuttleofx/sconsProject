@@ -472,15 +472,13 @@ class SConsProject:
         self.CC = self.compiler.CC
 
         if 'icecc' in self.env['CC']:
-            self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CC'])
-            self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CXX'])
+            self.compiler.setup(self.env['ICECC_CC'], self.env['ICECC_CXX'])
             self.env['ENV']['ICECC_CC'] = self.env['ICECC_CC']
             self.env['ENV']['ICECC_CXX'] = self.env['ICECC_CXX']
-            self.compiler.setup(self.env['ICECC_CC'], self.env['ICECC_CXX'])
         else:
-            self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['CC'])
-            self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['CXX'])
             self.compiler.setup(self.env['CC'], self.env['CXX'])
+        self.env['CCVERSION'] = self.compiler.ccVersionStr
+        self.env['CXXVERSION'] = self.compiler.cxxVersionStr
 
         if self.windows:
             if compilerName == 'visual':

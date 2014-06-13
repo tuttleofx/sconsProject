@@ -7,6 +7,8 @@ linkxxBin = 'link'
 
 ccVersionStr = 'unknown'
 ccVersion = [0,0,0]
+cxxVersionStr = 'unknown'
+cxxVersion = [0,0,0]
 
 CC = {}
 CC['define']   = '/D'
@@ -80,6 +82,7 @@ def retrieveVersion(ccBinArg):
 
 def setup(ccBinArg, cxxBinArg):
     global ccVersionStr, ccVersion
+    global cxxVersionStr, cxxVersion
     
     ccVersionStr = retrieveVersion(ccBinArg)
     cxxVersionStr = retrieveVersion(cxxBinArg)
