@@ -27,7 +27,8 @@ def retrieveVersion( bin = 'clang' ):
     import subprocess
     try:
         versionMsg = subprocess.Popen([bin, CC['version']], stdout=subprocess.PIPE).communicate()[0].strip()
-        versionStr = versionMsg.split()[3]
+        # Use a regex because the clang output change between platforms.
+        versionStr = re.search('.+?clang version (\d(?:.?\d)?).+?', versionMsg).groups()[0]
         return versionStr
     except:
         return 'unknown'
