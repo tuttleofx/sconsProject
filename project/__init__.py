@@ -1204,7 +1204,7 @@ class SConsProject:
                 dependencies=[], installDir=None, installAs=None, install=True,
                 headers=[], localHeaders=[],
                 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'],
-                public=True, publicName=None,
+                public=True, publicName=None, outArgs=None
             ):
         '''
         To create a SharedLibrary and expose it in the project to be simply used by other targets.
@@ -1314,6 +1314,8 @@ class SConsProject:
             localEnv.Alias( publicName, dstLibInstall )
 
         self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
+        if outArgs is not None:
+            outArgs["env"] = localEnv
         return dstLibInstall
 
     def Program( self, target,
