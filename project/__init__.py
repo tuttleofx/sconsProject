@@ -1527,9 +1527,11 @@ class SConsProject:
         These could be libraries which will configure your environment
         or just build dependencies needed to run the test.
         '''
-        l_target = target
         if target is None:
+            # By default: use current directory name
             l_target = self.getDirs(0)
+        else:
+            l_target = self.asList(target)
 
         l_sources = self.asList(sources)
         l_dirs = self.asList(dirs)
@@ -1581,7 +1583,7 @@ class SConsProject:
                 self.appendLibsToEnv(localEnv, localLibraries)
             else:
                 # if no environment we create a new one
-                localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
+                localEnv = self.createEnv( localLibraries, name='-'.join(['scripttest'] + l_target) )
 
             if envFlags:
                 localEnv.AppendUnique( **envFlags )
