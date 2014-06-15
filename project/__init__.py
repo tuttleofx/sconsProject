@@ -1220,7 +1220,7 @@ class SConsProject:
         globalEnvFlags: defines some flags
         dependencies:
         installDir: Destination directory to install the target
-        installAs: Full path of the fil to install
+        installAs: Full path of the file to install
         install: install the target (in the default or custom dir or renamed using installAs)
         headers: headers to include in the project (not for build, but project generation eg. visualProject)
         localHeaders: headers to include in the project (not for build, but project generation eg. visualProject)
@@ -1421,41 +1421,94 @@ class SConsProject:
         '''
         packageOutputDir = self.inOutputDir( os.path.join('python', packageName))
 
-        pyBindingEnv = self.createEnv( [
+        bindingEnv = self.createEnv( [
             self.libs.python,
             self.libs.pthread,
             ] + libraries, name=packageName )
 
-        pythonVersion = pyBindingEnv['version_python'].split('.')
+        pythonVersion = bindingEnv['version_python'].split('.')
         pythonMajorVersion = int(pythonVersion[0]) if pythonVersion and pythonVersion[0] else 0
         swigPython3Flag = ['-py3'] if pythonMajorVersion == 3 else []
 
-        pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
-        pyBindingEnv.AppendUnique( SWIGPATH = pyBindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
-        pyBindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
-        pyBindingEnv.Replace( SHLIBPREFIX = '' )
+        bindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
+        bindingEnv.AppendUnique( SWIGPATH = bindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+        bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+        bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_python$CFILESUFFIX" )
+        bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_python$CXXFILESUFFIX" )
+        bindingEnv.Replace( SHLIBPREFIX = '' )
         if self.macos:
-            pyBindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
+            bindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
         if self.windows:
-             pyBindingEnv.Replace( SHLIBSUFFIX = '.pyd' ) # .dll not recognized
+             bindingEnv.Replace( SHLIBSUFFIX = '.pyd' ) # .dll not recognized
 
         pyBindingModule = self.SharedLibrary(
-                target = '_' + moduleName,
+                target = 'python_' + moduleName,
                 sources = sources,
-                env = pyBindingEnv,
-                installDir = packageOutputDir,
+                env = bindingEnv,
+                installAs = os.path.join(packageOutputDir, '_' + moduleName + bindingEnv["SHLIBSUFFIX"]),
                 publicName = packageName
             )
 
-        initFile = pyBindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
+        initFile = bindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
                                     [ SCons.Script.Mkdir('${TARGET.dir}'),
                                       SCons.Script.Touch('$TARGET'),
                                     ])
-        pyBindingEnv.Requires( pyBindingModule, initFile )
+        bindingEnv.Requires( pyBindingModule, initFile )
 
-        pyBindingEnv.Alias( 'python', pyBindingModule )
-        self.declareTarget(pyBindingEnv, pyBindingModule, packageName)
+        bindingEnv.Alias( 'python', pyBindingModule )
+        self.declareTarget(bindingEnv, pyBindingModule, packageName)
         return pyBindingModule
+
+
+    def matlabSwigBinding( self,
+            packageName,
+            moduleName,
+            sources=[], libraries=[],
+            swigFlags=[],
+            defaultSwigFlags=["-Wall", "-small", "-fcompact", "-O"], #, "-modern", "-shadow", "-docstring"
+            sourceLanguage = "c++"
+            ):
+        '''
+        Declare a Swig binding module.
+
+        packageName: name of the containing package
+        moduleName: name of the module itself
+        sources: ".i" files. Generally one file for a package.
+        libraries: lib dependencies
+        swigFlags: add flags to swig
+        defaultSwigFlags: to overide the default swig flags
+        sourceLanguage: by default "c++".
+        '''
+        packageOutputDir = self.inOutputDir( os.path.join('matlab', packageName))
+
+        bindingEnv = self.createEnv( [
+            self.libs.matlab,
+            self.libs.pthread,
+            ] + libraries, name=packageName )
+
+        bindingEnv.AppendUnique( SWIGFLAGS = ['-matlab','-'+sourceLanguage] + defaultSwigFlags + swigFlags )
+        bindingEnv.AppendUnique( SWIGPATH = bindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+        bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+        bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_matlab$CFILESUFFIX" )
+        bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_matlab$CXXFILESUFFIX" )
+        bindingEnv.Replace( SHLIBPREFIX = '' )
+        bindingEnv.Replace( SHLIBSUFFIX = '.mexa64' )
+
+        bindingModule = self.SharedLibrary(
+                target = 'matlab_' + moduleName,
+                sources = sources,
+                env = bindingEnv,
+                installAs = os.path.join(packageOutputDir, moduleName + bindingEnv["SHLIBSUFFIX"]),
+                publicName = packageName
+            )
+
+        moduleDir = bindingEnv.Command( os.path.join(packageOutputDir, "+" + moduleName), '',
+                                    [ SCons.Script.Mkdir('${TARGET}'),
+                                    ])
+        bindingEnv.Requires( bindingModule, moduleDir )
+
+        self.declareTarget(bindingEnv, bindingModule, packageName)
+        return bindingModule
 
 
     def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], execLibraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
