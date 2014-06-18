@@ -92,7 +92,6 @@ class SConsProject:
     compiler          = None
     libs              = autoconf
     commonLibs        = [libs.sconsProject]
-    libs_help         = [] # temporary list of librairies already added to help
     libs_error        = [] # list of libraries with autoconf error
     allLibsChecked    = [] # temporary list of librairies already checked
     removedFromDefaultTargets = {}
@@ -464,7 +463,6 @@ class SConsProject:
         # options from command line or configuration file
         self.opts = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
         self.defineHiddenOptions(self.opts)
-        self.opts_help = self.createOptions(self.sconf_files, SCons.Script.ARGUMENTS)
 
         self.opts.Update(self.env)
 
@@ -474,15 +472,13 @@ class SConsProject:
         self.CC = self.compiler.CC
 
         if 'icecc' in self.env['CC']:
-            self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CC'])
-            self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['ICECC_CXX'])
+            self.compiler.setup(self.env['ICECC_CC'], self.env['ICECC_CXX'])
             self.env['ENV']['ICECC_CC'] = self.env['ICECC_CC']
             self.env['ENV']['ICECC_CXX'] = self.env['ICECC_CXX']
-            self.compiler.setup(self.env['ICECC_CC'], self.env['ICECC_CXX'])
         else:
-            self.env['CCVERSION'] = self.compiler.retrieveVersion(self.env['CC'])
-            self.env['CXXVERSION'] = self.compiler.retrieveVersion(self.env['CXX'])
             self.compiler.setup(self.env['CC'], self.env['CXX'])
+        self.env['CCVERSION'] = self.compiler.ccVersionStr
+        self.env['CXXVERSION'] = self.compiler.cxxVersionStr
 
         if self.windows:
             if compilerName == 'visual':
@@ -683,7 +679,6 @@ class SConsProject:
         '''
         The begining function the SConstruct need to call at first of all.
         '''
-
         self.initOptions()
         self.applyOptionsOnProject()
 
@@ -691,9 +686,42 @@ class SConsProject:
             SCons.Script.Execute(SCons.Script.Delete(self.dir_output_build))
             SCons.Script.Exit(1)
 
-        self.printInfos()
-
         SCons.Script.VariantDir(self.dir_output_build, self.dir, duplicate=0)
+        if SCons.Script.GetOption('help'):
+            print(
+            '''
+        -- Build targets --
+            scons                  : build all plugins and programs
+            scons plugins          : build all plugins
+            scons test             : build all tests ('unittest' for c++ tests, 'scripttest' for script tests)
+            scons doc              : build doxygen documentation
+
+        -- SCons options --
+            scons -H               : documentation of SCons itself
+            scons -Q               : making the SCons output less verbose
+            scons -j               : parallel builds
+            scons -i               : continue building after it encounters an error
+            scons --interactive    : to rebuild without reparsing SConscript files
+            scons --tree           : display all or part of the SCons dependency graph
+            scons --debug=presub   : pre-substitution string that SCons uses to generate the command lines it executes
+            scons --debug=findlibs : display what library names SCons is searching for, and in which directories it is searching
+
+        -- Configuration file --
+            If the external library installation is not directly in "/usr/include" and "/usr/lib",
+            you should indicate this information into a "host.sconf" file at the root of the project.
+            For example for jpeg:
+                incdir_jpeg = "/opt/custom/jpeg/include"
+                libdir_jpeg = "/opt/custom/jpeg/lib"
+            If the subdirectories use standard name: "include" and "lib", you could do the same thing with the shortcut:
+                dir_jpeg = "/opt/custom/jpeg"
+            
+            If it's needed you could also override the link libraries:
+                lib_jpeg = ["jpeg_custom", "mt"]
+        '''
+            )
+            SCons.Script.Exit(1)
+
+        self.printInfos()
 
 
     def end(self):
@@ -738,32 +766,6 @@ class SConsProject:
                 print ''
                 SCons.Script.Exit(1)
             sys.stdout.write(self.env['color_clear'])
-
-        SCons.Script.Help(
-             '''
-        -- Usefull scons options --
-            scons -Q               : making the SCons output less verbose
-            scons -j               : parallel builds
-            scons -i               : continue building after it encounters an error
-            scons --tree           : display all or part of the SCons dependency graph
-            scons --debug=presub   : pre-substitution string that SCons uses to generate the command lines it executes
-            scons --debug=findlibs : display what library names SCons is searching for, and in which directories it is searching
-
-    '''
-             )
-
-        SCons.Script.Help(
-             '''
-        -- Build options --
-            scons                  : build all plugins and programs
-            scons plugins          : build all plugins
-            scons pluginName       : build the plugin named 'pluginName'
-            scons doc              : build doxygen documentation
-
-    '''
-             )
-
-        SCons.Script.Help(self.opts_help.GenerateHelpText(self.env))
 
         # user can add some aliases
         for v in self.env['aliases']:
@@ -826,9 +828,6 @@ class SConsProject:
             if not lib.initOptions(self, opts_current):
                 if lib not in self.libs_error:
                     self.libs_error.append(lib)
-            if lib not in self.libs_help:
-                lib.initOptions(self, self.opts_help)
-                self.libs_help.append(lib)
         opts_current.Update(env)
         self.applyOptionsOnEnv(env)
 
@@ -1204,7 +1203,7 @@ class SConsProject:
                 dependencies=[], installDir=None, installAs=None, install=True,
                 headers=[], localHeaders=[],
                 accept=['*.cpp', '*.cc', '*.c'], reject=['@', '_qrc', '_ui', '.moc.cpp'],
-                public=True, publicName=None,
+                public=True, publicName=None, outArgs=None
             ):
         '''
         To create a SharedLibrary and expose it in the project to be simply used by other targets.
@@ -1221,7 +1220,7 @@ class SConsProject:
         globalEnvFlags: defines some flags
         dependencies:
         installDir: Destination directory to install the target
-        installAs: Full path of the fil to install
+        installAs: Full path of the file to install
         install: install the target (in the default or custom dir or renamed using installAs)
         headers: headers to include in the project (not for build, but project generation eg. visualProject)
         localHeaders: headers to include in the project (not for build, but project generation eg. visualProject)
@@ -1314,6 +1313,8 @@ class SConsProject:
             localEnv.Alias( publicName, dstLibInstall )
 
         self.allTargets[publicName if publicName else target] = (dstLibInstall,dstLibChecker)
+        if outArgs is not None:
+            outArgs["env"] = localEnv
         return dstLibInstall
 
     def Program( self, target,
@@ -1420,41 +1421,94 @@ class SConsProject:
         '''
         packageOutputDir = self.inOutputDir( os.path.join('python', packageName))
 
-        pyBindingEnv = self.createEnv( [
+        bindingEnv = self.createEnv( [
             self.libs.python,
             self.libs.pthread,
             ] + libraries, name=packageName )
 
-        pythonVersion = pyBindingEnv['version_python'].split('.')
+        pythonVersion = bindingEnv['version_python'].split('.')
         pythonMajorVersion = int(pythonVersion[0]) if pythonVersion and pythonVersion[0] else 0
         swigPython3Flag = ['-py3'] if pythonMajorVersion == 3 else []
 
-        pyBindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
-        pyBindingEnv.AppendUnique( SWIGPATH = pyBindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
-        pyBindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
-        pyBindingEnv.Replace( SHLIBPREFIX = '' )
+        bindingEnv.AppendUnique( SWIGFLAGS = ['-python','-'+sourceLanguage] + defaultSwigFlags + swigFlags + swigPython3Flag )
+        bindingEnv.AppendUnique( SWIGPATH = bindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+        bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+        bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_python$CFILESUFFIX" )
+        bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_python$CXXFILESUFFIX" )
+        bindingEnv.Replace( SHLIBPREFIX = '' )
         if self.macos:
-            pyBindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
+            bindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
         if self.windows:
-             pyBindingEnv.Replace( SHLIBSUFFIX = '.pyd' ) # .dll not recognized
+             bindingEnv.Replace( SHLIBSUFFIX = '.pyd' ) # .dll not recognized
 
         pyBindingModule = self.SharedLibrary(
-                target = '_' + moduleName,
+                target = 'python_' + moduleName,
                 sources = sources,
-                env = pyBindingEnv,
-                installDir = packageOutputDir,
+                env = bindingEnv,
+                installAs = os.path.join(packageOutputDir, '_' + moduleName + bindingEnv["SHLIBSUFFIX"]),
                 publicName = packageName
             )
 
-        initFile = pyBindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
+        initFile = bindingEnv.Command( os.path.join( packageOutputDir, '__init__.py' ), '',
                                     [ SCons.Script.Mkdir('${TARGET.dir}'),
                                       SCons.Script.Touch('$TARGET'),
                                     ])
-        pyBindingEnv.Requires( pyBindingModule, initFile )
+        bindingEnv.Requires( pyBindingModule, initFile )
 
-        pyBindingEnv.Alias( 'python', pyBindingModule )
-        self.declareTarget(pyBindingEnv, pyBindingModule, packageName)
+        bindingEnv.Alias( 'python', pyBindingModule )
+        self.declareTarget(bindingEnv, pyBindingModule, packageName)
         return pyBindingModule
+
+
+    def matlabSwigBinding( self,
+            packageName,
+            moduleName,
+            sources=[], libraries=[],
+            swigFlags=[],
+            defaultSwigFlags=["-Wall", "-small", "-fcompact", "-O"], #, "-modern", "-shadow", "-docstring"
+            sourceLanguage = "c++"
+            ):
+        '''
+        Declare a Swig binding module.
+
+        packageName: name of the containing package
+        moduleName: name of the module itself
+        sources: ".i" files. Generally one file for a package.
+        libraries: lib dependencies
+        swigFlags: add flags to swig
+        defaultSwigFlags: to overide the default swig flags
+        sourceLanguage: by default "c++".
+        '''
+        packageOutputDir = self.inOutputDir( os.path.join('matlab', packageName))
+
+        bindingEnv = self.createEnv( [
+            self.libs.matlab,
+            self.libs.pthread,
+            ] + libraries, name=packageName )
+
+        bindingEnv.AppendUnique( SWIGFLAGS = ['-matlab','-'+sourceLanguage] + defaultSwigFlags + swigFlags )
+        bindingEnv.AppendUnique( SWIGPATH = bindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+        bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+        bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_matlab$CFILESUFFIX" )
+        bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_matlab$CXXFILESUFFIX" )
+        bindingEnv.Replace( SHLIBPREFIX = '' )
+        bindingEnv.Replace( SHLIBSUFFIX = '.mexa64' )
+
+        bindingModule = self.SharedLibrary(
+                target = 'matlab_' + moduleName,
+                sources = sources,
+                env = bindingEnv,
+                installAs = os.path.join(packageOutputDir, moduleName + bindingEnv["SHLIBSUFFIX"]),
+                publicName = packageName
+            )
+
+        moduleDir = bindingEnv.Command( os.path.join(packageOutputDir, "+" + moduleName), '',
+                                    [ SCons.Script.Mkdir('${TARGET}'),
+                                    ])
+        bindingEnv.Requires( bindingModule, moduleDir )
+
+        self.declareTarget(bindingEnv, bindingModule, packageName)
+        return bindingModule
 
 
     def UnitTest( self, target=None, sources=[], dirs=[], env=None, libraries=[], execLibraries=[], includes=[], localEnvFlags={}, replaceLocalEnvFlags={},
@@ -1525,9 +1579,11 @@ class SConsProject:
         These could be libraries which will configure your environment
         or just build dependencies needed to run the test.
         '''
-        l_target = target
         if target is None:
+            # By default: use current directory name
             l_target = self.getDirs(0)
+        else:
+            l_target = self.asList(target)
 
         l_sources = self.asList(sources)
         l_dirs = self.asList(dirs)
@@ -1579,7 +1635,7 @@ class SConsProject:
                 self.appendLibsToEnv(localEnv, localLibraries)
             else:
                 # if no environment we create a new one
-                localEnv = self.createEnv( localLibraries, name='-'.join(l_target) )
+                localEnv = self.createEnv( localLibraries, name='-'.join(['scripttest'] + l_target) )
 
             if envFlags:
                 localEnv.AppendUnique( **envFlags )
