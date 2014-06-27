@@ -520,7 +520,7 @@ class SConsProject:
         opts.Add('CXX', 'Specify the C++ Compiler', self.compiler.cxxBin)
 
         opts.Add('SCRIPTTESTXX', 'Specify the script test binary', "nosetests")
-        opts.Add('SCRIPTTESTFLAGS', 'Specify the script test flags', "--detailed-errors --process-timeout=60")
+        opts.Add('SCRIPTTESTFLAGS', 'Specify the script test flags', "--detailed-errors --process-timeout=60 --nocapture")
 
         opts.Add('ENVINC', 'Additional include path (at compilation)', [] if not self.windows else os.environ.get('INCLUDE', '').split(':'))
         opts.Add('ENVPATH', 'Additional bin path (at compilation)', [])
