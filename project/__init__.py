@@ -738,7 +738,7 @@ class SConsProject:
 
         def printInstalledFiles(target, source, env):
             # Whatever it takes to build
-            for t in FindInstalledFiles():
+            for t in SCons.Script.FindInstalledFiles():
                 print '*', t.name, ':'
                 print ' '*5, t.abspath
             return None
