@@ -1435,6 +1435,7 @@ class SConsProject:
         bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
         bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_python$CFILESUFFIX" )
         bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_python$CXXFILESUFFIX" )
+        bindingEnv.Replace( SWIGDIRECTORSUFFIX = "_wrap_python.h" )
         bindingEnv.Replace( SHLIBPREFIX = '' )
         if self.macos:
             bindingEnv.Replace( SHLIBSUFFIX = '.so' ) # .dyLib not recognized
@@ -1491,6 +1492,7 @@ class SConsProject:
         bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
         bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_matlab$CFILESUFFIX" )
         bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_matlab$CXXFILESUFFIX" )
+        bindingEnv.Replace( SWIGDIRECTORSUFFIX = "_wrap_matlab.h" )
         bindingEnv.Replace( SHLIBPREFIX = '' )
         bindingEnv.Replace( SHLIBSUFFIX = '.mexa64' )
 
