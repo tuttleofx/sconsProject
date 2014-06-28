@@ -10,11 +10,11 @@ from m import *
 from gomp import *
 from pthread import *
 from ltdl import *
-from webp import *
 from xml import *
-from ddjvu import *
 from lzma import *
 from openexr import *
+# from webp import *
+# from ddjvu import *
 
 # imagemagick C API
 
@@ -46,8 +46,23 @@ else:
         ['magick/MagickCore.h'],
         'c',
         name='imagemagick',
-        dependencies=[lcms, tiff, freetype, jpeg, xlibs, bz2, z, m, gomp, pthread, ltdl, webp, xml, ddjvu, lzma, openexr]
+        dependencies=[
+            lcms,
+            tiff,
+            freetype,
+            jpeg,
+            xlibs,
+            bz2,
+            z,
+            m,
+            gomp,
+            pthread,
+            ltdl,
+            xml,
+            lzma,
+            openexr,
+            # ddjvu,
+            # webp,
+            ]
         )
-
-
 
