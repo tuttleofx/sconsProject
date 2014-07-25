@@ -1461,6 +1461,65 @@ class SConsProject:
         return pyBindingModule
 
 
+    def javaSwigBinding( self,
+            packageName,
+            moduleName,
+            sources=[], libraries=[],
+            swigFlags=[],
+            defaultSwigFlags=["-Wall", "-small", "-fcompact", "-O"], # "-shadow", "-docstring"
+            sourceLanguage = "c++"
+            ):
+        '''
+        Declare a Swig binding module.
+
+        packageName: name of the containing package
+        moduleName: name of the module itself
+        sources: ".i" files. Generally one file for a package.
+        libraries: lib dependencies
+        swigFlags: add flags to swig
+        defaultSwigFlags: to overide the default swig flags
+        sourceLanguage: by default "c++".
+        '''
+        javaRoot = self.inOutputDir('java')
+        packageOutputDir = os.path.join(javaRoot, packageName)
+
+        bindingEnv = self.createEnv( [
+            self.libs.python,
+            self.libs.pthread,
+            ] + libraries, name=packageName )
+
+        bindingEnv.AppendUnique( SWIGFLAGS = ['-java', '-'+sourceLanguage, '-package', packageName] + defaultSwigFlags + swigFlags )
+        bindingEnv.AppendUnique( SWIGPATH = bindingEnv['CPPPATH'] ) # todo: it's specific to the sourceLanguage
+        bindingEnv.AppendUnique( SWIGOUTDIR = packageOutputDir )
+        bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_java$CFILESUFFIX" )
+        bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_java$CXXFILESUFFIX" )
+        bindingEnv.Replace( SWIGDIRECTORSUFFIX = "_wrap_java.h" )
+        # bindingEnv.Replace( SHLIBPREFIX = '' )
+
+        javaBindingModule = self.SharedLibrary(
+                target = 'java_' + moduleName,
+                sources = sources,
+                env = bindingEnv,
+                installDir = os.path.join(javaRoot),
+                publicName = packageName
+            )
+
+        javaClass = bindingEnv.Java(
+            target=os.path.join(javaRoot, "classes"),
+            source=SCons.Script.Glob(packageOutputDir)
+        )
+        bindingEnv.Requires(javaClass, javaBindingModule)
+
+        javaJar = bindingEnv.Jar(
+            target=os.path.join(javaRoot, moduleName + '.jar'),
+            source=javaClass
+        )
+
+        bindingEnv.Alias( 'java', javaJar )
+        self.declareTarget(bindingEnv, javaJar, packageName)
+        return javaBindingModule
+
+
     def matlabSwigBinding( self,
             packageName,
             moduleName,
