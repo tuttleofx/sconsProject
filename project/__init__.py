@@ -1486,7 +1486,7 @@ class SConsProject:
         packageOutputDir = os.path.join(javaRoot, pkgdir)
 
         bindingEnv = self.createEnv( [
-            self.libs.java,
+            self.libs.python,
             self.libs.pthread,
             ] + libraries, name=packageName )
 
