@@ -1480,11 +1480,13 @@ class SConsProject:
         defaultSwigFlags: to overide the default swig flags
         sourceLanguage: by default "c++".
         '''
+
+        pkgdir = packageName.replace('.', os.sep)
         javaRoot = self.inOutputDir('java')
-        packageOutputDir = os.path.join(javaRoot, packageName)
+        packageOutputDir = os.path.join(javaRoot, pkgdir)
 
         bindingEnv = self.createEnv( [
-            self.libs.java,
+            self.libs.python,
             self.libs.pthread,
             ] + libraries, name=packageName )
 
@@ -1494,6 +1496,7 @@ class SConsProject:
         bindingEnv.Replace( SWIGCFILESUFFIX = "_wrap_java$CFILESUFFIX" )
         bindingEnv.Replace( SWIGCXXFILESUFFIX = "_wrap_java$CXXFILESUFFIX" )
         bindingEnv.Replace( SWIGDIRECTORSUFFIX = "_wrap_java.h" )
+        #bindingEnv.Replace(  )
         # bindingEnv.Replace( SHLIBPREFIX = '' )
 
         javaBindingModule = self.SharedLibrary(
@@ -1512,7 +1515,8 @@ class SConsProject:
 
         javaJar = bindingEnv.Jar(
             target=os.path.join(javaRoot, moduleName + '.jar'),
-            source=javaClass
+            source=os.path.join(javaRoot, "classes", pkgdir),
+            JARCHDIR=os.path.join(javaRoot, "classes"),
         )
 
         bindingEnv.Alias( 'java', javaJar )
