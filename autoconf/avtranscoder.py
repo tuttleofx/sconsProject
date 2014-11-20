@@ -1,8 +1,8 @@
 from _external import *
 from ffmpeg import ffmpeg
 
-avTranscoder = LibWithHeaderChecker(
-				'AvTranscoder',
+avtranscoder = LibWithHeaderChecker(
+				'avtranscoder',
 				'AvTranscoder/common.hpp',
 				'c++',
 				dependencies=[ffmpeg]
