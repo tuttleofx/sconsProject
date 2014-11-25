@@ -2,6 +2,12 @@ from _external import *
 from z import *
 from bz2 import *
 
+resampleLibraryName = 'avresample'
+
+if not LibWithHeaderChecker('avresample', 'libavresample/avresample.h', 'c'):
+    if LibWithHeaderChecker('swresample', 'libswresample/swresample.h', 'c'):
+        resampleLibraryName = 'swresample'
+
 ffmpeg = LibWithHeaderChecker(
 		[
 			'avdevice',
@@ -9,6 +15,8 @@ ffmpeg = LibWithHeaderChecker(
 			'avformat',
 			'avcodec',
 			'avutil',
+			'avfilter',
+			resampleLibraryName,
 		],
 		'libavformat/avformat.h',
 		'c',
