@@ -1,3 +1,3 @@
 from _external import *
 
-clapack = HeaderChecker( 'clapack', ['clapack.h'], 'c' )
+clapack = HeaderChecker( 'clapack', ['f2c.h', 'clapack.h'], 'c' )

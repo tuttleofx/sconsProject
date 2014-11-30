@@ -10,6 +10,10 @@ arBin = 'ar'
 ranlibBin = 'ranlib'
 linkBin = ccBin
 linkxxBin = cxxBin
+ccVersionStr = 'unknown'
+ccVersion = [0,0,0]
+cxxVersionStr = 'unknown'
+cxxVersion = [0,0,0]
 
 # by default, same interface than gcc
 CC = dict(gcc.CC)
@@ -29,7 +33,8 @@ def retrieveVersion( bin = 'clang' ):
     import subprocess
     try:
         versionMsg = subprocess.Popen([bin, CC['version']], stdout=subprocess.PIPE).communicate()[0].strip()
-        versionStr = versionMsg.split()[3]
+        # Use a regex because the clang output change between platforms.
+        versionStr = re.search('.*?clang version (\d(?:.?\d)?(?:.?\d)?).*', versionMsg).groups()[0]
         return versionStr
     except:
         return 'unknown'
@@ -37,6 +42,7 @@ def retrieveVersion( bin = 'clang' ):
 
 def setup(ccBinArg, cxxBinArg):
     global ccVersionStr, ccVersion
+    global cxxVersionStr, cxxVersion
 
     ccVersionStr = retrieveVersion(ccBinArg)
     cxxVersionStr = retrieveVersion(cxxBinArg)
@@ -46,6 +52,10 @@ def setup(ccBinArg, cxxBinArg):
     if ccVersionStr != 'unknown':
         ccVersion = re.findall(r"\d+", ccVersionStr)[:3]
         ccVersion = [int(i) for i in ccVersion]
+
+    if cxxVersionStr != 'unknown':
+        cxxVersion = re.findall(r"\d+", cxxVersionStr)[:3]
+        cxxVersion = [int(i) for i in cxxVersion]
 
     if ccVersion[0]>=4 and ccVersion[1]>1:
         CC['warning2'].append('-Werror=return-type')

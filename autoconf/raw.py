@@ -9,7 +9,9 @@ rawDependencies = [
 
 if linux:
 	from gomp import *
+	from jpeg import *
 	rawDependencies.append(gomp)
+	rawDependencies.append(jpeg)
 
 
 raw = LibWithHeaderChecker(

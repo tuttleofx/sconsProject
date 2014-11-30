@@ -2,7 +2,7 @@ from _external import *
 from ilmbase import *
 
 ctl = LibWithHeaderChecker(
-		['IlmCtl', 'IlmCtlMath', 'IlmCtlSimd', ],
+		['IlmCtlSimd', 'IlmCtl', 'IlmCtlMath'],
 		['CtlSimdInterpreter.h','Iex.h'],
 		'c++',
 		name='ctl',

@@ -1,6 +1,6 @@
 from _external import *
+from newmat import *
 
-newmat = LibChecker('newmat')
 optpp = LibWithHeaderChecker(
 		'opt',
 		['OPT++_config.h'],

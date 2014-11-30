@@ -15,6 +15,8 @@ arBin = 'ar'
 ranlibBin = 'ranlib'
 ccVersionStr = 'unknown'
 ccVersion = [0,0,0]
+cxxVersionStr = 'unknown'
+cxxVersion = [0,0,0]
 
 
 CC = {}
@@ -129,6 +131,7 @@ def retrieveVersion(ccBinArg):
 
 def setup(ccBinArg, cxxBinArg):
     global ccVersionStr, ccVersion
+    global cxxVersionStr, cxxVersion
     
     ccVersionStr = retrieveVersion(ccBinArg)
     cxxVersionStr = retrieveVersion(cxxBinArg)
@@ -137,6 +140,9 @@ def setup(ccBinArg, cxxBinArg):
     
     if ccVersionStr != 'unknown':
         ccVersion = [int(i) for i in ccVersionStr.split('.')]
+
+    if cxxVersionStr != 'unknown':
+        cxxVersion = [int(i) for i in cxxVersionStr.split('.')]
 
     if ccVersion[0]>=4 and ccVersion[1]>1:
         CC['warning2'].append('-Werror=return-type')

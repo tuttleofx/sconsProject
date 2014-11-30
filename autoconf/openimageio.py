@@ -6,6 +6,14 @@ from boost_thread import *
 from openjpeg import *
 from half import *
 from dl import *
+from tiff import *
+from raw import *
+from z import *
+from ilmbase import *
+from openexr import *
+from png import *
+# from webp import *
+# from gif import *
 
 openimageio = LibWithHeaderChecker(
             ['OpenImageIO'], 'imageio.h', 'c++',
@@ -18,6 +26,15 @@ openimageio = LibWithHeaderChecker(
                 boost_thread,
                 openjpeg,
                 half,
-                dl] )
+                dl,
+                tiff,
+                raw,
+                z,
+                openexr,
+                ilmbase,
+                png,
+                # webp,
+                # gif,
+                ] )
 
 
