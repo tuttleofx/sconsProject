@@ -1,3 +1,4 @@
 from _external import *
 
-jpeg = LibWithHeaderChecker('jpeg', ['stdio.h','jpeglib.h'], 'c')
+# CDK is a framework for ncurses
+cdk = LibWithHeaderChecker('cdk', ['cdk.h'], 'c')
